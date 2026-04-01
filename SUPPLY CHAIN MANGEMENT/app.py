@@ -11,6 +11,7 @@ CHANGES FROM v27:
   6. Improved layout structure with better visual hierarchy
   7. Enhanced sidebar with active state indicators and polished styling
   8. All existing functionality preserved
+  9. Fixed _po_kpi_row to handle missing/non-numeric columns safely
 """
 
 import io
@@ -1893,7 +1894,7 @@ def render_premium_table(df_show, first_col_accent=True):
         cells = []
         for ci, (col, val) in enumerate(row.items()):
             cell_class = "accent-cell" if first_col_accent and ci == 0 else ""
-            cells.append(f"<td class='{cell_class}'>{val}</td>")
+            cells.append(f"<td class='{cell_class}'>{val}】>
         tbody_rows.append(f"<tr>{''.join(cells)}</tr>")
     
     tbody_html = "".join(tbody_rows)
@@ -2358,18 +2359,48 @@ def _top10_altair(
 
 def _po_kpi_row(df, prefix=""):
     """Premium KPI row for purchase analytics."""
-    total_qty    = float(df[t("Qty","الكمية")].sum())
-    total_amt    = float(df[t("Subtotal","المجموع")].sum())
-    n_vendors    = int(df[t("Vendor","المورد")].nunique())
-    n_products   = int(df[t("Model Code","رمز الموديل")].nunique())
+    # Early exit if no data
+    if df is None or df.empty:
+        st.info(t("No purchase data available.", "لا توجد بيانات مشتريات متاحة."))
+        return
 
-    cards = [
-        _premium_kpi_card("📦", f"{total_qty:,.0f}",    t("Total Qty Purchased","إجمالي الكمية المشتراة")),
-        _premium_kpi_card("💰", f"{total_amt:,.2f}",    t("Total Amount (SAR)","إجمالي المبلغ")),
-        _premium_kpi_card("🏭", str(n_vendors),         t("Vendors","الموردون")),
-        _premium_kpi_card("🏷️", str(n_products),        t("Products","المنتجات")),
-    ]
-    _render_kpi_grid(cards)
+    # Language-aware column names
+    qty_col   = t("Qty", "الكمية")
+    amt_col   = t("Subtotal", "الإجمالي")
+    vend_col  = t("Vendor", "المورد")
+    prod_col  = t("Model Code", "كود الموديل")
+
+    # Safe numeric extraction
+    total_qty = 0.0
+    if qty_col in df.columns:
+        total_qty = pd.to_numeric(df[qty_col], errors="coerce").fillna(0).sum()
+    else:
+        st.warning(t("Column 'Qty' not found.", "العمود 'الكمية' غير موجود."))
+
+    total_amt = 0.0
+    if amt_col in df.columns:
+        total_amt = pd.to_numeric(df[amt_col], errors="coerce").fillna(0).sum()
+    else:
+        st.warning(t("Column 'Subtotal' not found.", "العمود 'الإجمالي' غير موجود."))
+
+    n_vendors = 0
+    if vend_col in df.columns:
+        n_vendors = df[vend_col].nunique()
+    else:
+        st.warning(t("Column 'Vendor' not found.", "العمود 'المورد' غير موجود."))
+
+    n_products = 0
+    if prod_col in df.columns:
+        n_products = df[prod_col].nunique()
+    else:
+        st.warning(t("Column 'Model Code' not found.", "العمود 'كود الموديل' غير موجود."))
+
+    # Display KPI cards
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric(t("Total Qty", "إجمالي الكمية"), f"{total_qty:,.0f}")
+    c2.metric(t("Total Amount", "إجمالي المبلغ"), f"{total_amt:,.2f}")
+    c3.metric(t("Vendors", "الموردون"), int(n_vendors))
+    c4.metric(t("Products", "المنتجات"), int(n_products))
 
 
 def _po_full_table(df):
