@@ -1894,7 +1894,7 @@ def render_premium_table(df_show, first_col_accent=True):
         cells = []
         for ci, (col, val) in enumerate(row.items()):
             cell_class = "accent-cell" if first_col_accent and ci == 0 else ""
-            cells.append(f"<td class='{cell_class}'>{val}】>
+            cells.append(f"<td class='{cell_class}'>{val}</td>")
         tbody_rows.append(f"<tr>{''.join(cells)}</tr>")
     
     tbody_html = "".join(tbody_rows)
