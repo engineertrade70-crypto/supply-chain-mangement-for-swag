@@ -1,6 +1,6 @@
 """
 SWAG Product Comparison Dashboard
-Version 28.1 — Fixed numeric coercion errors for sales/purchase analytics
+Version 28.2 — Fixed numeric coercion errors + language‑agnostic column access
 """
 
 import io
@@ -1704,8 +1704,23 @@ def _sales_kpi_row(df):
     ]
     _render_kpi_grid(cards)
 
+# =============================================================================
+# HELPER: GET COLUMN NAME (LANGUAGE‑AGNOSTIC)
+# =============================================================================
+def get_column_name(df, en, ar):
+    """
+    Returns the column name that exists in the DataFrame.
+    If both exist, returns the one according to current language? We'll just return the first found.
+    To avoid key errors, we return the first matching.
+    """
+    if en in df.columns:
+        return en
+    if ar in df.columns:
+        return ar
+    return None
+
 # ─────────────────────────────────────────────────────────────────────────────
-# SWAG SALES ANALYTICS VIEW  ← FIXED: _to_num() on all groupby results
+# SWAG SALES ANALYTICS VIEW  ← FIXED: language‑agnostic column access
 # ─────────────────────────────────────────────────────────────────────────────
 def show_sales_analytics():
     _section_header(t("SWAG Sales Analytics","تحليلات مبيعات سواغ"), "💰")
@@ -1730,8 +1745,10 @@ def show_sales_analytics():
     with sf4:
         cached_sa     = st.session_state.get("salesanalyticsdf")
         customer_opts = []
-        if cached_sa is not None and not cached_sa.empty and t("Customer","العميل") in cached_sa.columns:
-            customer_opts = sorted(cached_sa[t("Customer","العميل")].dropna().unique().tolist())
+        if cached_sa is not None and not cached_sa.empty:
+            cust_col = get_column_name(cached_sa, "Customer", "العميل")
+            if cust_col:
+                customer_opts = sorted(cached_sa[cust_col].dropna().unique().tolist())
         sa_customer_sel = st.multiselect(
             f"👤 {t('Customer','العميل')}", options=customer_opts, default=[],
             placeholder=t("All Customers (default)","كل العملاء (افتراضي)"), key="sa_customer_sel")
@@ -1753,98 +1770,137 @@ def show_sales_analytics():
     if sa_full.empty:
         st.info(t("No sales found for this period.","لا توجد مبيعات لهذه الفترة.")); return
 
-    # ensure numeric
-    for nc in (t("Qty","الكمية"), t("Unit Price","سعر الوحدة"), t("Subtotal","المجموع")):
-        if nc in sa_full.columns:
+    # -------------------------------------------------------------------------
+    # Get column names dynamically
+    # -------------------------------------------------------------------------
+    date_col     = get_column_name(sa_full, "Date", "التاريخ")
+    model_code_col = get_column_name(sa_full, "Model Code", "رمز الموديل")
+    product_col  = get_column_name(sa_full, "Product", "المنتج")
+    qty_col      = get_column_name(sa_full, "Qty", "الكمية")
+    unit_price_col = get_column_name(sa_full, "Unit Price", "سعر الوحدة")
+    subtotal_col = get_column_name(sa_full, "Subtotal", "المجموع")
+    customer_col = get_column_name(sa_full, "Customer", "العميل")
+    so_col       = get_column_name(sa_full, "SO", "أمر البيع")
+    brand_cat_col = get_column_name(sa_full, "Brand Category", "الفئة التجارية")
+    category_col = get_column_name(sa_full, "Category", "الفئة")
+
+    # Ensure we have required columns
+    if qty_col is None or subtotal_col is None:
+        st.error(t("Required columns (Qty/Subtotal) missing in data.", "الأعمدة المطلوبة (الكمية/المجموع) غير موجودة."))
+        return
+
+    # Ensure numeric
+    for nc in (qty_col, unit_price_col, subtotal_col):
+        if nc is not None and nc in sa_full.columns:
             sa_full[nc] = _to_num(sa_full[nc])
 
-    sa_df = (sa_full[sa_full[t("Customer","العميل")].isin(sa_customer_sel)].copy()
-             if sa_customer_sel else sa_full.copy())
-    sa_df_model = (sa_df[sa_df[t("Model Code","رمز الموديل")].str.upper() == sa_model_input.upper()].copy()
-                   if sa_model_input else None)
+    # Filter by customer if selected
+    if sa_customer_sel and customer_col:
+        sa_df = sa_full[sa_full[customer_col].isin(sa_customer_sel)].copy()
+    else:
+        sa_df = sa_full.copy()
+
+    # Filter by model if provided
+    if sa_model_input and model_code_col:
+        sa_df_model = sa_df[sa_df[model_code_col].str.upper() == sa_model_input.upper()].copy()
+    else:
+        sa_df_model = None
 
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
     _section_header(t("Sales KPIs","مؤشرات المبيعات"), "📊")
-    _sales_kpi_row(sa_df)
+    _sales_kpi_row(sa_df)   # this uses t() internally, which is fine for columns that exist
 
     # Top 10 products by qty
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
     _section_header(t("Top 10 Analytics","أفضل 10 تحليلات"), "🏆")
 
-    prod_qty_grp = (
-        sa_df.copy()
-        .assign(**{t("Model Code","رمز الموديل"): sa_df[t("Model Code","رمز الموديل")].replace("","(No Code)").fillna("(No Code)")})
-        .groupby([t("Model Code","رمز الموديل"), t("Product","المنتج")], as_index=False)[t("Qty","الكمية")]
-        .sum()
-        .sort_values(t("Qty","الكمية"), ascending=False)
-        .head(10).reset_index(drop=True)
-    )
-    prod_qty_grp[t("Qty","الكمية")] = _to_num(prod_qty_grp[t("Qty","الكمية")])
-    prod_qty_grp[t("Total Qty","إجمالي الكمية")] = prod_qty_grp[t("Qty","الكمية")].map(lambda v: f"{v:,.0f}")
+    # Build group for top products by qty
+    if model_code_col and product_col and qty_col:
+        prod_qty_grp = (
+            sa_df.copy()
+            .assign(**{model_code_col: sa_df[model_code_col].replace("","(No Code)").fillna("(No Code)")})
+            .groupby([model_code_col, product_col], as_index=False)[qty_col]
+            .sum()
+            .sort_values(qty_col, ascending=False)
+            .head(10).reset_index(drop=True)
+        )
+        prod_qty_grp[qty_col] = _to_num(prod_qty_grp[qty_col])
+        total_qty_label = t("Total Qty","إجمالي الكمية")
+        prod_qty_grp[total_qty_label] = prod_qty_grp[qty_col].map(lambda v: f"{v:,.0f}")
 
-    _chart_card_open(t("Top 10 Products by Qty Sold","أعلى 10 منتجات حسب الكمية المباعة"), "🏆")
-    pc1,pc2 = st.columns([1.6,1])
-    with pc1:
-        st.altair_chart(_alt_bar_chart(prod_qty_grp, x_field=t("Model Code","رمز الموديل"),
-                                       y_field=t("Qty","الكمية"), tooltip_fmt=",.0f", color="#2ecc71"),
-                        use_container_width=True)
-    with pc2:
-        render_premium_table(prod_qty_grp[[t("Model Code","رمز الموديل"), t("Product","المنتج"), t("Total Qty","إجمالي الكمية")]])
-    _chart_card_close()
+        _chart_card_open(t("Top 10 Products by Qty Sold","أعلى 10 منتجات حسب الكمية المباعة"), "🏆")
+        pc1,pc2 = st.columns([1.6,1])
+        with pc1:
+            st.altair_chart(_alt_bar_chart(prod_qty_grp, x_field=model_code_col,
+                                           y_field=qty_col, tooltip_fmt=",.0f", color="#2ecc71"),
+                            use_container_width=True)
+        with pc2:
+            render_premium_table(prod_qty_grp[[model_code_col, product_col, total_qty_label]])
+        _chart_card_close()
 
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
     # Top 10 by amount
-    prod_amt_grp = (
-        sa_df.copy()
-        .assign(**{t("Model Code","رمز الموديل"): sa_df[t("Model Code","رمز الموديل")].replace("","(No Code)").fillna("(No Code)")})
-        .groupby([t("Model Code","رمز الموديل"), t("Product","المنتج")], as_index=False)[t("Subtotal","المجموع")]
-        .sum()
-        .sort_values(t("Subtotal","المجموع"), ascending=False)
-        .head(10).reset_index(drop=True)
-    )
-    prod_amt_grp[t("Subtotal","المجموع")] = _to_num(prod_amt_grp[t("Subtotal","المجموع")])
-    prod_amt_grp[t("Total SAR","إجمالي المبلغ")] = prod_amt_grp[t("Subtotal","المجموع")].map(lambda v: f"{v:,.2f}")
+    if model_code_col and product_col and subtotal_col:
+        prod_amt_grp = (
+            sa_df.copy()
+            .assign(**{model_code_col: sa_df[model_code_col].replace("","(No Code)").fillna("(No Code)")})
+            .groupby([model_code_col, product_col], as_index=False)[subtotal_col]
+            .sum()
+            .sort_values(subtotal_col, ascending=False)
+            .head(10).reset_index(drop=True)
+        )
+        prod_amt_grp[subtotal_col] = _to_num(prod_amt_grp[subtotal_col])
+        total_sar_label = t("Total SAR","إجمالي المبلغ")
+        prod_amt_grp[total_sar_label] = prod_amt_grp[subtotal_col].map(lambda v: f"{v:,.2f}")
 
-    _chart_card_open(t("Top 10 Products by Sales Amount","أعلى 10 منتجات حسب المبلغ"), "💰")
-    pa1,pa2 = st.columns([1.6,1])
-    with pa1:
-        st.altair_chart(_alt_bar_chart(prod_amt_grp, x_field=t("Model Code","رمز الموديل"),
-                                       y_field=t("Subtotal","المجموع"), tooltip_fmt=",.2f", color="#3498db"),
-                        use_container_width=True)
-    with pa2:
-        render_premium_table(prod_amt_grp[[t("Model Code","رمز الموديل"), t("Product","المنتج"), t("Total SAR","إجمالي المبلغ")]])
-    _chart_card_close()
+        _chart_card_open(t("Top 10 Products by Sales Amount","أعلى 10 منتجات حسب المبلغ"), "💰")
+        pa1,pa2 = st.columns([1.6,1])
+        with pa1:
+            st.altair_chart(_alt_bar_chart(prod_amt_grp, x_field=model_code_col,
+                                           y_field=subtotal_col, tooltip_fmt=",.2f", color="#3498db"),
+                            use_container_width=True)
+        with pa2:
+            render_premium_table(prod_amt_grp[[model_code_col, product_col, total_sar_label]])
+        _chart_card_close()
 
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-    _top10_altair(t("Top 10 Brand Categories by Qty","أعلى 10 فئات علامة تجارية حسب الكمية"),
-                  t("Brand Category","الفئة التجارية"), t("Qty","الكمية"), sa_df, color="#9b59b6")
+
+    # Top 10 brand categories by qty
+    if brand_cat_col and qty_col:
+        _top10_altair(t("Top 10 Brand Categories by Qty","أعلى 10 فئات علامة تجارية حسب الكمية"),
+                      brand_cat_col, qty_col, sa_df, color="#9b59b6")
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-    _top10_altair(t("Top 10 Categories by Qty","أعلى 10 فئات حسب الكمية"),
-                  t("Category","الفئة"), t("Qty","الكمية"), sa_df, color="#e74c3c")
+
+    # Top 10 categories by qty
+    if category_col and qty_col:
+        _top10_altair(t("Top 10 Categories by Qty","أعلى 10 فئات حسب الكمية"),
+                      category_col, qty_col, sa_df, color="#e74c3c")
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
     # Top customers
-    cust_grp = (
-        sa_df.copy()
-        .assign(**{t("Customer","العميل"): sa_df[t("Customer","العميل")].replace("","(No Customer)").fillna("(No Customer)")})
-        .groupby(t("Customer","العميل"), as_index=False)[t("Subtotal","المجموع")]
-        .sum()
-        .sort_values(t("Subtotal","المجموع"), ascending=False)
-        .head(10).reset_index(drop=True)
-    )
-    cust_grp[t("Subtotal","المجموع")] = _to_num(cust_grp[t("Subtotal","المجموع")])
-    cust_grp[t("Total SAR","إجمالي المبلغ")] = cust_grp[t("Subtotal","المجموع")].map(lambda v: f"{v:,.2f}")
+    if customer_col and subtotal_col:
+        cust_grp = (
+            sa_df.copy()
+            .assign(**{customer_col: sa_df[customer_col].replace("","(No Customer)").fillna("(No Customer)")})
+            .groupby(customer_col, as_index=False)[subtotal_col]
+            .sum()
+            .sort_values(subtotal_col, ascending=False)
+            .head(10).reset_index(drop=True)
+        )
+        cust_grp[subtotal_col] = _to_num(cust_grp[subtotal_col])
+        total_sar_label = t("Total SAR","إجمالي المبلغ")
+        cust_grp[total_sar_label] = cust_grp[subtotal_col].map(lambda v: f"{v:,.2f}")
 
-    _chart_card_open(t("Top 10 Customers by Sales Amount","أعلى 10 عملاء حسب المبلغ"), "👤")
-    cc1,cc2 = st.columns([1.6,1])
-    with cc1:
-        st.altair_chart(_alt_bar_chart(cust_grp, x_field=t("Customer","العميل"),
-                                       y_field=t("Subtotal","المجموع"), tooltip_fmt=",.2f", color="#f1c40f"),
-                        use_container_width=True)
-    with cc2:
-        render_premium_table(cust_grp[[t("Customer","العميل"), t("Total SAR","إجمالي المبلغ")]])
-    _chart_card_close()
+        _chart_card_open(t("Top 10 Customers by Sales Amount","أعلى 10 عملاء حسب المبلغ"), "👤")
+        cc1,cc2 = st.columns([1.6,1])
+        with cc1:
+            st.altair_chart(_alt_bar_chart(cust_grp, x_field=customer_col,
+                                           y_field=subtotal_col, tooltip_fmt=",.2f", color="#f1c40f"),
+                            use_container_width=True)
+        with cc2:
+            render_premium_table(cust_grp[[customer_col, total_sar_label]])
+        _chart_card_close()
 
     # Donut share analysis
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
@@ -1852,70 +1908,72 @@ def show_sales_analytics():
     pie1,pie2,pie3 = st.columns(3)
 
     with pie1:
-        bc_share = (sa_df.copy()
-                    .assign(**{t("Brand Category","الفئة التجارية"):
-                               sa_df[t("Brand Category","الفئة التجارية")].replace("","(No Brand)").fillna("(No Brand)")})
-                    .groupby(t("Brand Category","الفئة التجارية"), as_index=False)[t("Subtotal","المجموع")]
-                    .sum().sort_values(t("Subtotal","المجموع"), ascending=False))
-        bc_share[t("Subtotal","المجموع")] = _to_num(bc_share[t("Subtotal","المجموع")])
-        _plotly_donut(bc_share[t("Brand Category","الفئة التجارية")].tolist(),
-                      bc_share[t("Subtotal","المجموع")].tolist(),
-                      title=t("Brand Category Share","حصة الفئة التجارية"))
+        if brand_cat_col and subtotal_col:
+            bc_share = (sa_df.copy()
+                        .assign(**{brand_cat_col: sa_df[brand_cat_col].replace("","(No Brand)").fillna("(No Brand)")})
+                        .groupby(brand_cat_col, as_index=False)[subtotal_col]
+                        .sum().sort_values(subtotal_col, ascending=False))
+            bc_share[subtotal_col] = _to_num(bc_share[subtotal_col])
+            _plotly_donut(bc_share[brand_cat_col].tolist(),
+                          bc_share[subtotal_col].tolist(),
+                          title=t("Brand Category Share","حصة الفئة التجارية"))
     with pie2:
-        cat_share = (sa_df.copy()
-                     .assign(**{t("Category","الفئة"):
-                                sa_df[t("Category","الفئة")].replace("","(No Category)").fillna("(No Category)")})
-                     .groupby(t("Category","الفئة"), as_index=False)[t("Subtotal","المجموع")]
-                     .sum().sort_values(t("Subtotal","المجموع"), ascending=False))
-        cat_share[t("Subtotal","المجموع")] = _to_num(cat_share[t("Subtotal","المجموع")])
-        _plotly_donut(cat_share[t("Category","الفئة")].tolist(),
-                      cat_share[t("Subtotal","المجموع")].tolist(),
-                      title=t("Category Share","حصة الفئة"))
+        if category_col and subtotal_col:
+            cat_share = (sa_df.copy()
+                         .assign(**{category_col: sa_df[category_col].replace("","(No Category)").fillna("(No Category)")})
+                         .groupby(category_col, as_index=False)[subtotal_col]
+                         .sum().sort_values(subtotal_col, ascending=False))
+            cat_share[subtotal_col] = _to_num(cat_share[subtotal_col])
+            _plotly_donut(cat_share[category_col].tolist(),
+                          cat_share[subtotal_col].tolist(),
+                          title=t("Category Share","حصة الفئة"))
     with pie3:
-        cust_all = (sa_df.copy()
-                    .assign(**{t("Customer","العميل"):
-                               sa_df[t("Customer","العميل")].replace("","(No Customer)").fillna("(No Customer)")})
-                    .groupby(t("Customer","العميل"), as_index=False)[t("Subtotal","المجموع")]
-                    .sum().sort_values(t("Subtotal","المجموع"), ascending=False))
-        cust_all[t("Subtotal","المجموع")] = _to_num(cust_all[t("Subtotal","المجموع")])
-        if not cust_all.empty:
-            top10c   = cust_all.head(10)
-            others_v = float(cust_all.iloc[10:][t("Subtotal","المجموع")].sum()) if len(cust_all)>10 else 0
-            p_labels = top10c[t("Customer","العميل")].tolist()
-            p_vals   = top10c[t("Subtotal","المجموع")].tolist()
-            if others_v > 0: p_labels.append("Others"); p_vals.append(others_v)
-            _plotly_donut(p_labels, p_vals, title=t("Customer Share (Top 10)","حصة العملاء (أعلى 10)"))
+        if customer_col and subtotal_col:
+            cust_all = (sa_df.copy()
+                        .assign(**{customer_col: sa_df[customer_col].replace("","(No Customer)").fillna("(No Customer)")})
+                        .groupby(customer_col, as_index=False)[subtotal_col]
+                        .sum().sort_values(subtotal_col, ascending=False))
+            cust_all[subtotal_col] = _to_num(cust_all[subtotal_col])
+            if not cust_all.empty:
+                top10c   = cust_all.head(10)
+                others_v = float(cust_all.iloc[10:][subtotal_col].sum()) if len(cust_all)>10 else 0
+                p_labels = top10c[customer_col].tolist()
+                p_vals   = top10c[subtotal_col].tolist()
+                if others_v > 0: p_labels.append("Others"); p_vals.append(others_v)
+                _plotly_donut(p_labels, p_vals, title=t("Customer Share (Top 10)","حصة العملاء (أعلى 10)"))
 
     # Time series
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
     _section_header(t("Sales Trend Over Time","اتجاه المبيعات عبر الزمن"), "📈")
     ts_col1,ts_col2 = st.columns(2)
 
-    with ts_col1:
-        _chart_card_open(t("Qty Sold Over Time","الكمية المباعة عبر الزمن"), "📦")
-        ts_qty = (sa_df.copy()
-                  .assign(Date=pd.to_datetime(sa_df[t("Date","التاريخ")], errors="coerce"))
-                  .dropna(subset=["Date"])
-                  .groupby("Date", as_index=False)[t("Qty","الكمية")].sum()
-                  .sort_values("Date"))
-        ts_qty[t("Qty","الكمية")] = _to_num(ts_qty[t("Qty","الكمية")])
-        if not ts_qty.empty:
-            st.altair_chart(_alt_line_chart(ts_qty, "Date", t("Qty","الكمية"), height=240, color="#2ecc71"),
-                            use_container_width=True)
-        _chart_card_close()
+    if date_col and qty_col:
+        with ts_col1:
+            _chart_card_open(t("Qty Sold Over Time","الكمية المباعة عبر الزمن"), "📦")
+            ts_qty = (sa_df.copy()
+                      .assign(Date=pd.to_datetime(sa_df[date_col], errors="coerce"))
+                      .dropna(subset=["Date"])
+                      .groupby("Date", as_index=False)[qty_col].sum()
+                      .sort_values("Date"))
+            ts_qty[qty_col] = _to_num(ts_qty[qty_col])
+            if not ts_qty.empty:
+                st.altair_chart(_alt_line_chart(ts_qty, "Date", qty_col, height=240, color="#2ecc71"),
+                                use_container_width=True)
+            _chart_card_close()
 
-    with ts_col2:
-        _chart_card_open(t("Sales Amount Over Time","مبلغ المبيعات عبر الزمن"), "💰")
-        ts_amt = (sa_df.copy()
-                  .assign(Date=pd.to_datetime(sa_df[t("Date","التاريخ")], errors="coerce"))
-                  .dropna(subset=["Date"])
-                  .groupby("Date", as_index=False)[t("Subtotal","المجموع")].sum()
-                  .sort_values("Date"))
-        ts_amt[t("Subtotal","المجموع")] = _to_num(ts_amt[t("Subtotal","المجموع")])
-        if not ts_amt.empty:
-            st.altair_chart(_alt_line_chart(ts_amt, "Date", t("Subtotal","المجموع"), height=240, color="#3498db"),
-                            use_container_width=True)
-        _chart_card_close()
+    if date_col and subtotal_col:
+        with ts_col2:
+            _chart_card_open(t("Sales Amount Over Time","مبلغ المبيعات عبر الزمن"), "💰")
+            ts_amt = (sa_df.copy()
+                      .assign(Date=pd.to_datetime(sa_df[date_col], errors="coerce"))
+                      .dropna(subset=["Date"])
+                      .groupby("Date", as_index=False)[subtotal_col].sum()
+                      .sort_values("Date"))
+            ts_amt[subtotal_col] = _to_num(ts_amt[subtotal_col])
+            if not ts_amt.empty:
+                st.altair_chart(_alt_line_chart(ts_amt, "Date", subtotal_col, height=240, color="#3498db"),
+                                use_container_width=True)
+            _chart_card_close()
 
     # Single model detail
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
@@ -1928,9 +1986,10 @@ def show_sales_analytics():
         st.info(t(f"No sales records found for model **{sa_model_input}**.",
                   f"لا توجد سجلات مبيعات للموديل **{sa_model_input}**."))
     elif sa_df_model is not None:
-        sm_qty  = float(_to_num(sa_df_model[t("Qty","الكمية")]).sum())
-        sm_amt  = float(_to_num(sa_df_model[t("Subtotal","المجموع")]).sum())
-        sm_cust = int(sa_df_model[t("Customer","العميل")].nunique())
+        # KPI for single model
+        sm_qty  = float(_to_num(sa_df_model[qty_col]).sum()) if qty_col else 0.0
+        sm_amt  = float(_to_num(sa_df_model[subtotal_col]).sum()) if subtotal_col else 0.0
+        sm_cust = int(sa_df_model[customer_col].nunique()) if customer_col else 0
         sm_cards = [
             _premium_kpi_card("📦", f"{sm_qty:,.0f}",  t("Total Qty (this model)","إجمالي الكمية (الموديل)")),
             _premium_kpi_card("💰", f"{sm_amt:,.2f}",  t("Total Sales (SAR)","إجمالي المبيعات")),
@@ -1940,45 +1999,48 @@ def show_sales_analytics():
 
         st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
         _chart_card_open(f"{t('Sales Qty Over Time','كمية المبيعات عبر الزمن')} — {sa_model_input}", "📈")
-        sm_ts = (sa_df_model.copy()
-                 .assign(Date=pd.to_datetime(sa_df_model[t("Date","التاريخ")], errors="coerce"))
-                 .dropna(subset=["Date"])
-                 .groupby("Date", as_index=False)[t("Qty","الكمية")].sum()
-                 .sort_values("Date"))
-        sm_ts[t("Qty","الكمية")] = _to_num(sm_ts[t("Qty","الكمية")])
-        if not sm_ts.empty:
-            st.altair_chart(_alt_line_chart(sm_ts, "Date", t("Qty","الكمية"), height=230, color="#2ecc71"),
-                            use_container_width=True)
+        if date_col and qty_col:
+            sm_ts = (sa_df_model.copy()
+                     .assign(Date=pd.to_datetime(sa_df_model[date_col], errors="coerce"))
+                     .dropna(subset=["Date"])
+                     .groupby("Date", as_index=False)[qty_col].sum()
+                     .sort_values("Date"))
+            sm_ts[qty_col] = _to_num(sm_ts[qty_col])
+            if not sm_ts.empty:
+                st.altair_chart(_alt_line_chart(sm_ts, "Date", qty_col, height=230, color="#2ecc71"),
+                                use_container_width=True)
         _chart_card_close()
 
         st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-        sm_cust_grp = (
-            sa_df_model.copy()
-            .assign(**{t("Customer","العميل"): sa_df_model[t("Customer","العميل")].replace("","(No Customer)").fillna("(No Customer)")})
-            .groupby(t("Customer","العميل"), as_index=False)[t("Qty","الكمية")]
-            .sum().sort_values(t("Qty","الكمية"), ascending=False).head(10).reset_index(drop=True))
-        sm_cust_grp[t("Qty","الكمية")] = _to_num(sm_cust_grp[t("Qty","الكمية")])
-        sm_cust_grp[t("Total Qty","إجمالي الكمية")] = sm_cust_grp[t("Qty","الكمية")].map(lambda v: f"{v:,.0f}")
+        if customer_col and qty_col:
+            sm_cust_grp = (
+                sa_df_model.copy()
+                .assign(**{customer_col: sa_df_model[customer_col].replace("","(No Customer)").fillna("(No Customer)")})
+                .groupby(customer_col, as_index=False)[qty_col]
+                .sum().sort_values(qty_col, ascending=False).head(10).reset_index(drop=True))
+            sm_cust_grp[qty_col] = _to_num(sm_cust_grp[qty_col])
+            total_qty_label = t("Total Qty","إجمالي الكمية")
+            sm_cust_grp[total_qty_label] = sm_cust_grp[qty_col].map(lambda v: f"{v:,.0f}")
 
-        _chart_card_open(t("Top Customers for this Model","أعلى العملاء لهذا الموديل"), "👤")
-        sc1,sc2 = st.columns([1.6,1])
-        with sc1:
-            st.altair_chart(_alt_bar_chart(sm_cust_grp, x_field=t("Customer","العميل"),
-                                           y_field=t("Qty","الكمية"), tooltip_fmt=",.0f", color="#9b59b6"),
-                            use_container_width=True)
-        with sc2:
-            render_premium_table(sm_cust_grp[[t("Customer","العميل"), t("Total Qty","إجمالي الكمية")]])
-        _chart_card_close()
+            _chart_card_open(t("Top Customers for this Model","أعلى العملاء لهذا الموديل"), "👤")
+            sc1,sc2 = st.columns([1.6,1])
+            with sc1:
+                st.altair_chart(_alt_bar_chart(sm_cust_grp, x_field=customer_col,
+                                               y_field=qty_col, tooltip_fmt=",.0f", color="#9b59b6"),
+                                use_container_width=True)
+            with sc2:
+                render_premium_table(sm_cust_grp[[customer_col, total_qty_label]])
+            _chart_card_close()
 
-        if not sm_cust_grp.empty:
-            top_c    = sm_cust_grp.head(8)
-            others_v = float(sm_cust_grp.iloc[8:][t("Qty","الكمية")].sum()) if len(sm_cust_grp)>8 else 0
-            p_labels = top_c[t("Customer","العميل")].tolist()
-            p_vals   = top_c[t("Qty","الكمية")].tolist()
-            if others_v > 0: p_labels.append("Others"); p_vals.append(others_v)
-            _d1,_d2,_d3 = st.columns([1,1.2,1])
-            with _d2:
-                _plotly_donut(p_labels, p_vals, title=t("Customer Share","حصة العملاء"), height=320)
+            if not sm_cust_grp.empty:
+                top_c    = sm_cust_grp.head(8)
+                others_v = float(sm_cust_grp.iloc[8:][qty_col].sum()) if len(sm_cust_grp)>8 else 0
+                p_labels = top_c[customer_col].tolist()
+                p_vals   = top_c[qty_col].tolist()
+                if others_v > 0: p_labels.append("Others"); p_vals.append(others_v)
+                _d1,_d2,_d3 = st.columns([1,1.2,1])
+                with _d2:
+                    _plotly_donut(p_labels, p_vals, title=t("Customer Share","حصة العملاء"), height=320)
 
     # Full table + downloads
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
@@ -1986,10 +2048,12 @@ def show_sales_analytics():
     show_df = (sa_df_model if (sa_model_input and sa_df_model is not None and not sa_df_model.empty)
                else sa_df)
     full_show = show_df.copy()
-    up_col  = t("Unit Price","سعر الوحدة"); sub_col = t("Subtotal","المجموع"); qty_col = t("Qty","الكمية")
-    if up_col  in full_show.columns: full_show[up_col]  = _to_num(full_show[up_col]).map(lambda v: f"{v:.2f} SAR")
-    if sub_col in full_show.columns: full_show[sub_col] = _to_num(full_show[sub_col]).map(lambda v: f"{v:,.2f} SAR")
-    if qty_col in full_show.columns: full_show[qty_col] = _to_num(full_show[qty_col]).map(lambda v: f"{v:,.0f}")
+    if unit_price_col in full_show.columns:
+        full_show[unit_price_col] = _to_num(full_show[unit_price_col]).map(lambda v: f"{v:.2f} SAR")
+    if subtotal_col in full_show.columns:
+        full_show[subtotal_col] = _to_num(full_show[subtotal_col]).map(lambda v: f"{v:,.2f} SAR")
+    if qty_col in full_show.columns:
+        full_show[qty_col] = _to_num(full_show[qty_col]).map(lambda v: f"{v:,.0f}")
     render_premium_table(full_show)
 
     st.markdown("<br>", unsafe_allow_html=True)
@@ -2007,7 +2071,7 @@ def show_sales_analytics():
                          use_container_width=True, key=f"sdl_xlsx{tag_s}")
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SWAG PURCHASE ANALYTICS VIEW  ← FIXED: _to_num() on all groupby results
+# SWAG PURCHASE ANALYTICS VIEW  ← FIXED: language‑agnostic column access
 # ─────────────────────────────────────────────────────────────────────────────
 def show_purchase_analytics():
     _section_header(t("SWAG Purchase Analytics","تحليلات مشتريات سواغ"), "🛒")
@@ -2032,8 +2096,10 @@ def show_purchase_analytics():
     with filt_col4:
         cached_po      = st.session_state.get("po_analytics_df")
         vendor_options = []
-        if cached_po is not None and not cached_po.empty and t("Vendor","المورد") in cached_po.columns:
-            vendor_options = sorted(cached_po[t("Vendor","المورد")].dropna().unique().tolist())
+        if cached_po is not None and not cached_po.empty:
+            vend_col = get_column_name(cached_po, "Vendor", "المورد")
+            if vend_col:
+                vendor_options = sorted(cached_po[vend_col].dropna().unique().tolist())
         all_vendors_label = t("All Vendors","كل الموردين")
         vendor_choices    = [all_vendors_label] + vendor_options
         po_vendor_sel = st.multiselect(f"🏭 {t('Vendor','المورد')}", options=vendor_choices,
@@ -2057,14 +2123,33 @@ def show_purchase_analytics():
     if po_full.empty:
         st.info(t("No purchases found for this period.","لا توجد مشتريات لهذه الفترة.")); return
 
-    # ensure numeric
-    for nc in (t("Qty","الكمية"), t("Unit Price","سعر الوحدة"), t("Subtotal","المجموع")):
-        if nc in po_full.columns:
+    # Get column names dynamically
+    date_col     = get_column_name(po_full, "Date", "التاريخ")
+    po_col       = get_column_name(po_full, "PO", "أمر الشراء")
+    vendor_col   = get_column_name(po_full, "Vendor", "المورد")
+    brand_cat_col= get_column_name(po_full, "Brand Category", "الفئة التجارية")
+    category_col = get_column_name(po_full, "Category", "الفئة")
+    model_code_col = get_column_name(po_full, "Model Code", "رمز الموديل")
+    product_col  = get_column_name(po_full, "Product", "المنتج")
+    qty_col      = get_column_name(po_full, "Qty", "الكمية")
+    unit_price_col = get_column_name(po_full, "Unit Price", "سعر الوحدة")
+    subtotal_col = get_column_name(po_full, "Subtotal", "المجموع")
+
+    if qty_col is None or subtotal_col is None:
+        st.error(t("Required columns (Qty/Subtotal) missing in purchase data.", "الأعمدة المطلوبة (الكمية/المجموع) غير موجودة في بيانات المشتريات."))
+        return
+
+    # Ensure numeric
+    for nc in (qty_col, unit_price_col, subtotal_col):
+        if nc is not None and nc in po_full.columns:
             po_full[nc] = _to_num(po_full[nc])
 
-    active_vendors = [v for v in po_vendor_sel if v != all_vendors_label]
-    pdf_vendor = (po_full[po_full[t("Vendor","المورد")].isin(active_vendors)].copy()
-                  if active_vendors else po_full.copy())
+    # Filter by vendor
+    active_vendors = [v for v in po_vendor_sel if v != t("All Vendors","كل الموردين")]
+    if active_vendors and vendor_col:
+        pdf_vendor = po_full[po_full[vendor_col].isin(active_vendors)].copy()
+    else:
+        pdf_vendor = po_full.copy()
 
     # Single model detail
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
@@ -2075,80 +2160,89 @@ def show_purchase_analytics():
                   "💡 أدخل **رمز الموديل** في الفلتر أعلاه لعرض تحليلات موديل واحد."))
     else:
         mc_norm  = po_model_input.upper()
-        model_df = po_full[po_full[t("Model Code","رمز الموديل")].str.upper() == mc_norm].copy()
-        if active_vendors:
-            model_df = model_df[model_df[t("Vendor","المورد")].isin(active_vendors)]
+        if model_code_col:
+            model_df = po_full[po_full[model_code_col].str.upper() == mc_norm].copy()
+            if active_vendors and vendor_col:
+                model_df = model_df[model_df[vendor_col].isin(active_vendors)]
 
-        if model_df.empty:
-            st.info(t(f"No purchase records found for model **{po_model_input}**.",
-                      f"لا توجد سجلات شراء للموديل **{po_model_input}**."))
-        else:
-            pb_qty  = float(_to_num(model_df[t("Qty","الكمية")]).sum())
-            pb_amt  = float(_to_num(model_df[t("Subtotal","المجموع")]).sum())
-            pb_vend = int(model_df[t("Vendor","المورد")].nunique())
-            pb_cards = [
-                _premium_kpi_card("📦", f"{pb_qty:,.0f}",  t("Total Qty (this model)","إجمالي الكمية (الموديل)")),
-                _premium_kpi_card("💰", f"{pb_amt:,.2f}",  t("Total Amount (SAR)","إجمالي المبلغ")),
-                _premium_kpi_card("🏭", str(pb_vend),      t("Vendors","الموردون")),
-            ]
-            _render_kpi_grid(pb_cards)
-
-            model_vendors = sorted(model_df[t("Vendor","المورد")].dropna().unique().tolist())
-            pb_vendor_sel = st.multiselect(
-                f"🏭 {t('Filter vendors for this model','فلتر الموردين لهذا الموديل')}",
-                options=model_vendors, default=[],
-                placeholder=t("All vendors for this model","كل موردين هذا الموديل"),
-                key="pb_vendor_sel_v3")
-            model_vendor_df = (model_df[model_df[t("Vendor","المورد")].isin(pb_vendor_sel)].copy()
-                               if pb_vendor_sel else model_df.copy())
-
-            if model_vendor_df.empty:
-                st.warning(t("No data for selected vendor(s).","لا بيانات للموردين المحددين."))
+            if model_df.empty:
+                st.info(t(f"No purchase records found for model **{po_model_input}**.",
+                          f"لا توجد سجلات شراء للموديل **{po_model_input}**."))
             else:
-                st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-                _chart_card_open(t("Purchase Qty Over Time","كمية الشراء عبر الزمن"), "📈")
-                ts_df = (model_vendor_df.groupby(t("Date","التاريخ"), as_index=False)[t("Qty","الكمية")]
-                         .sum().sort_values(t("Date","التاريخ")))
-                ts_df[t("Qty","الكمية")] = _to_num(ts_df[t("Qty","الكمية")])
-                if not ts_df.empty:
-                    ts_plot = ts_df.copy()
-                    ts_plot[t("Date","التاريخ")] = pd.to_datetime(ts_plot[t("Date","التاريخ")], errors="coerce")
-                    ts_plot = ts_plot.dropna(subset=[t("Date","التاريخ")])
-                    if not ts_plot.empty:
-                        st.altair_chart(_alt_line_chart(ts_plot, t("Date","التاريخ"),
-                                                        t("Qty","الكمية"), color="#e74c3c"),
-                                        use_container_width=True)
-                _chart_card_close()
+                pb_qty  = float(_to_num(model_df[qty_col]).sum())
+                pb_amt  = float(_to_num(model_df[subtotal_col]).sum())
+                pb_vend = int(model_df[vendor_col].nunique()) if vendor_col else 0
+                pb_cards = [
+                    _premium_kpi_card("📦", f"{pb_qty:,.0f}",  t("Total Qty (this model)","إجمالي الكمية (الموديل)")),
+                    _premium_kpi_card("💰", f"{pb_amt:,.2f}",  t("Total Amount (SAR)","إجمالي المبلغ")),
+                    _premium_kpi_card("🏭", str(pb_vend),      t("Vendors","الموردون")),
+                ]
+                _render_kpi_grid(pb_cards)
 
-                st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-                _chart_card_open(t("Vendor Share for this Model","حصة الموردين لهذا الموديل"), "🏭")
-                vshare = (model_vendor_df
-                          .assign(**{t("Vendor","المورد"): model_vendor_df[t("Vendor","المورد")].replace("","(No Vendor)").fillna("(No Vendor)")})
-                          .groupby(t("Vendor","المورد"), as_index=False)[t("Qty","الكمية")]
-                          .sum().sort_values(t("Qty","الكمية"), ascending=False).reset_index(drop=True))
-                vshare[t("Qty","الكمية")] = _to_num(vshare[t("Qty","الكمية")])
-                vshare[t("Total Qty","إجمالي الكمية")] = vshare[t("Qty","الكمية")].map(lambda v: f"{v:,.0f}")
-                vs1,vs2 = st.columns([1.6,1])
-                with vs1:
-                    st.altair_chart(_alt_bar_chart(vshare, x_field=t("Vendor","المورد"),
-                                                   y_field=t("Qty","الكمية"), tooltip_fmt=",.0f", color="#9b59b6"),
-                                    use_container_width=True)
-                with vs2:
-                    render_premium_table(vshare[[t("Vendor","المورد"), t("Total Qty","إجمالي الكمية")]])
-                _chart_card_close()
+                if vendor_col:
+                    model_vendors = sorted(model_df[vendor_col].dropna().unique().tolist())
+                    pb_vendor_sel = st.multiselect(
+                        f"🏭 {t('Filter vendors for this model','فلتر الموردين لهذا الموديل')}",
+                        options=model_vendors, default=[],
+                        placeholder=t("All vendors for this model","كل موردين هذا الموديل"),
+                        key="pb_vendor_sel_v3")
+                    model_vendor_df = (model_df[model_df[vendor_col].isin(pb_vendor_sel)].copy()
+                                       if pb_vendor_sel else model_df.copy())
+                else:
+                    model_vendor_df = model_df.copy()
 
-                if not vshare.empty:
-                    _vd1,_vd2,_vd3 = st.columns([1,1.2,1])
-                    with _vd2:
-                        _plotly_donut(vshare[t("Vendor","المورد")].tolist(),
-                                      vshare[t("Qty","الكمية")].tolist(),
-                                      title=t("Vendor Share","حصة الموردين"), height=300)
+                if model_vendor_df.empty:
+                    st.warning(t("No data for selected vendor(s).","لا بيانات للموردين المحددين."))
+                else:
+                    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+                    _chart_card_open(t("Purchase Qty Over Time","كمية الشراء عبر الزمن"), "📈")
+                    if date_col:
+                        ts_df = (model_vendor_df.groupby(date_col, as_index=False)[qty_col]
+                                 .sum().sort_values(date_col))
+                        ts_df[qty_col] = _to_num(ts_df[qty_col])
+                        if not ts_df.empty:
+                            ts_plot = ts_df.copy()
+                            ts_plot[date_col] = pd.to_datetime(ts_plot[date_col], errors="coerce")
+                            ts_plot = ts_plot.dropna(subset=[date_col])
+                            if not ts_plot.empty:
+                                st.altair_chart(_alt_line_chart(ts_plot, date_col,
+                                                                qty_col, color="#e74c3c"),
+                                                use_container_width=True)
+                    _chart_card_close()
 
-                st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-                st.markdown(f"#### 📋 {t('Model Detail Table','جدول تفاصيل الموديل')} — {po_model_input}")
-                _po_full_table(model_vendor_df)
-                st.markdown("<br>", unsafe_allow_html=True)
-                _po_download_row(model_vendor_df, tag_suffix=f"_{mc_norm}_v3")
+                    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+                    if vendor_col:
+                        _chart_card_open(t("Vendor Share for this Model","حصة الموردين لهذا الموديل"), "🏭")
+                        vshare = (model_vendor_df
+                                  .assign(**{vendor_col: model_vendor_df[vendor_col].replace("","(No Vendor)").fillna("(No Vendor)")})
+                                  .groupby(vendor_col, as_index=False)[qty_col]
+                                  .sum().sort_values(qty_col, ascending=False).reset_index(drop=True))
+                        vshare[qty_col] = _to_num(vshare[qty_col])
+                        total_qty_label = t("Total Qty","إجمالي الكمية")
+                        vshare[total_qty_label] = vshare[qty_col].map(lambda v: f"{v:,.0f}")
+                        vs1,vs2 = st.columns([1.6,1])
+                        with vs1:
+                            st.altair_chart(_alt_bar_chart(vshare, x_field=vendor_col,
+                                                           y_field=qty_col, tooltip_fmt=",.0f", color="#9b59b6"),
+                                            use_container_width=True)
+                        with vs2:
+                            render_premium_table(vshare[[vendor_col, total_qty_label]])
+                        _chart_card_close()
+
+                        if not vshare.empty:
+                            _vd1,_vd2,_vd3 = st.columns([1,1.2,1])
+                            with _vd2:
+                                _plotly_donut(vshare[vendor_col].tolist(),
+                                              vshare[qty_col].tolist(),
+                                              title=t("Vendor Share","حصة الموردين"), height=300)
+
+                    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+                    st.markdown(f"#### 📋 {t('Model Detail Table','جدول تفاصيل الموديل')} — {po_model_input}")
+                    _po_full_table(model_vendor_df)
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    _po_download_row(model_vendor_df, tag_suffix=f"_{mc_norm}_v3")
+        else:
+            st.error(t("Column 'Model Code' not found in purchase data.", "العمود 'رمز الموديل' غير موجود في بيانات المشتريات."))
 
     # Overall purchase analytics
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
@@ -2161,80 +2255,88 @@ def show_purchase_analytics():
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
     # Top 10 vendors by amount
-    _chart_card_open(t("Top 10 Vendors by Purchase Amount","أعلى 10 موردين حسب مبلغ الشراء"), "🏭")
-    vendor_grp = (
-        pdf_vendor.copy()
-        .assign(**{t("Vendor","المورد"): pdf_vendor[t("Vendor","المورد")].replace("","(No Vendor)").fillna("(No Vendor)")})
-        .groupby(t("Vendor","المورد"), as_index=False)[t("Subtotal","المجموع")]
-        .sum().sort_values(t("Subtotal","المجموع"), ascending=False).head(10).reset_index(drop=True))
-    vendor_grp[t("Subtotal","المجموع")] = _to_num(vendor_grp[t("Subtotal","المجموع")])
-    vendor_grp[t("Total Amount (SAR)","إجمالي المبلغ")] = vendor_grp[t("Subtotal","المجموع")].map(lambda v: f"{v:,.2f}")
-    vc1,vc2 = st.columns([1.6,1])
-    with vc1:
-        st.altair_chart(_alt_bar_chart(vendor_grp, x_field=t("Vendor","المورد"),
-                                       y_field=t("Subtotal","المجموع"), tooltip_fmt=",.2f", color="#3498db"),
-                        use_container_width=True)
-    with vc2:
-        render_premium_table(vendor_grp[[t("Vendor","المورد"), t("Total Amount (SAR)","إجمالي المبلغ")]])
-    _chart_card_close()
+    if vendor_col and subtotal_col:
+        _chart_card_open(t("Top 10 Vendors by Purchase Amount","أعلى 10 موردين حسب مبلغ الشراء"), "🏭")
+        vendor_grp = (
+            pdf_vendor.copy()
+            .assign(**{vendor_col: pdf_vendor[vendor_col].replace("","(No Vendor)").fillna("(No Vendor)")})
+            .groupby(vendor_col, as_index=False)[subtotal_col]
+            .sum().sort_values(subtotal_col, ascending=False).head(10).reset_index(drop=True))
+        vendor_grp[subtotal_col] = _to_num(vendor_grp[subtotal_col])
+        total_amount_label = t("Total Amount (SAR)","إجمالي المبلغ")
+        vendor_grp[total_amount_label] = vendor_grp[subtotal_col].map(lambda v: f"{v:,.2f}")
+        vc1,vc2 = st.columns([1.6,1])
+        with vc1:
+            st.altair_chart(_alt_bar_chart(vendor_grp, x_field=vendor_col,
+                                           y_field=subtotal_col, tooltip_fmt=",.2f", color="#3498db"),
+                            use_container_width=True)
+        with vc2:
+            render_premium_table(vendor_grp[[vendor_col, total_amount_label]])
+        _chart_card_close()
 
-    if not vendor_grp.empty:
-        _plotly_donut(vendor_grp[t("Vendor","المورد")].tolist(),
-                      vendor_grp[t("Subtotal","المجموع")].tolist(),
-                      title=t("Vendor Share (Top 10)","حصة الموردين (أعلى 10)"))
+        if not vendor_grp.empty:
+            _plotly_donut(vendor_grp[vendor_col].tolist(),
+                          vendor_grp[subtotal_col].tolist(),
+                          title=t("Vendor Share (Top 10)","حصة الموردين (أعلى 10)"))
 
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
     # Top 10 products by qty
-    _chart_card_open(t("Top 10 Products by Qty","أعلى 10 منتجات حسب الكمية"), "🏆")
-    prod_grp_a = (
-        pdf_vendor.copy()
-        .assign(**{
-            t("Model Code","رمز الموديل"): pdf_vendor[t("Model Code","رمز الموديل")].replace("","(No Code)").fillna("(No Code)"),
-            t("Product","المنتج"): pdf_vendor[t("Product","المنتج")].replace("","").fillna(""),
-        })
-        .groupby([t("Model Code","رمز الموديل"), t("Product","المنتج")], as_index=False)[t("Qty","الكمية")]
-        .sum().sort_values(t("Qty","الكمية"), ascending=False).head(10).reset_index(drop=True))
-    prod_grp_a[t("Qty","الكمية")] = _to_num(prod_grp_a[t("Qty","الكمية")])
-    prod_grp_a[t("Total Qty","إجمالي الكمية")] = prod_grp_a[t("Qty","الكمية")].map(lambda v: f"{v:,.0f}")
-    pc1,pc2 = st.columns([1.6,1])
-    with pc1:
-        st.altair_chart(_alt_bar_chart(prod_grp_a, x_field=t("Model Code","رمز الموديل"),
-                                       y_field=t("Qty","الكمية"), tooltip_fmt=",.0f", color="#2ecc71"),
-                        use_container_width=True)
-    with pc2:
-        render_premium_table(prod_grp_a[[t("Model Code","رمز الموديل"), t("Product","المنتج"), t("Total Qty","إجمالي الكمية")]])
-    _chart_card_close()
+    if model_code_col and product_col and qty_col:
+        _chart_card_open(t("Top 10 Products by Qty","أعلى 10 منتجات حسب الكمية"), "🏆")
+        prod_grp_a = (
+            pdf_vendor.copy()
+            .assign(**{
+                model_code_col: pdf_vendor[model_code_col].replace("","(No Code)").fillna("(No Code)"),
+                product_col: pdf_vendor[product_col].replace("","").fillna(""),
+            })
+            .groupby([model_code_col, product_col], as_index=False)[qty_col]
+            .sum().sort_values(qty_col, ascending=False).head(10).reset_index(drop=True))
+        prod_grp_a[qty_col] = _to_num(prod_grp_a[qty_col])
+        total_qty_label = t("Total Qty","إجمالي الكمية")
+        prod_grp_a[total_qty_label] = prod_grp_a[qty_col].map(lambda v: f"{v:,.0f}")
+        pc1,pc2 = st.columns([1.6,1])
+        with pc1:
+            st.altair_chart(_alt_bar_chart(prod_grp_a, x_field=model_code_col,
+                                           y_field=qty_col, tooltip_fmt=",.0f", color="#2ecc71"),
+                            use_container_width=True)
+        with pc2:
+            render_premium_table(prod_grp_a[[model_code_col, product_col, total_qty_label]])
+        _chart_card_close()
 
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-    _top10_altair(t("Top 10 Categories by Qty","أعلى 10 فئات حسب الكمية"),
-                  t("Category","الفئة"), t("Qty","الكمية"), pdf_vendor, color="#e74c3c")
+    if category_col and qty_col:
+        _top10_altair(t("Top 10 Categories by Qty","أعلى 10 فئات حسب الكمية"),
+                      category_col, qty_col, pdf_vendor, color="#e74c3c")
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-    _top10_altair(t("Top 10 Brand Categories by Qty","أعلى 10 فئات علامة تجارية حسب الكمية"),
-                  t("Brand Category","الفئة التجارية"), t("Qty","الكمية"), pdf_vendor, color="#9b59b6")
+    if brand_cat_col and qty_col:
+        _top10_altair(t("Top 10 Brand Categories by Qty","أعلى 10 فئات علامة تجارية حسب الكمية"),
+                      brand_cat_col, qty_col, pdf_vendor, color="#9b59b6")
 
     # Share donuts
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
     _section_header(t("Purchase Share Analysis","تحليل حصص المشتريات"), "🥧")
     d1,d2 = st.columns(2)
     with d1:
-        cat_share = (pdf_vendor.copy()
-                     .assign(**{t("Category","الفئة"): pdf_vendor[t("Category","الفئة")].replace("","(No Category)").fillna("(No Category)")})
-                     .groupby(t("Category","الفئة"), as_index=False)[t("Qty","الكمية")]
-                     .sum().sort_values(t("Qty","الكمية"), ascending=False))
-        cat_share[t("Qty","الكمية")] = _to_num(cat_share[t("Qty","الكمية")])
-        _plotly_donut(cat_share[t("Category","الفئة")].tolist(),
-                      cat_share[t("Qty","الكمية")].tolist(),
-                      title=t("Category Share","حصة الفئة"))
+        if category_col and qty_col:
+            cat_share = (pdf_vendor.copy()
+                         .assign(**{category_col: pdf_vendor[category_col].replace("","(No Category)").fillna("(No Category)")})
+                         .groupby(category_col, as_index=False)[qty_col]
+                         .sum().sort_values(qty_col, ascending=False))
+            cat_share[qty_col] = _to_num(cat_share[qty_col])
+            _plotly_donut(cat_share[category_col].tolist(),
+                          cat_share[qty_col].tolist(),
+                          title=t("Category Share","حصة الفئة"))
     with d2:
-        bc_share_p = (pdf_vendor.copy()
-                      .assign(**{t("Brand Category","الفئة التجارية"): pdf_vendor[t("Brand Category","الفئة التجارية")].replace("","(No Brand)").fillna("(No Brand)")})
-                      .groupby(t("Brand Category","الفئة التجارية"), as_index=False)[t("Qty","الكمية")]
-                      .sum().sort_values(t("Qty","الكمية"), ascending=False))
-        bc_share_p[t("Qty","الكمية")] = _to_num(bc_share_p[t("Qty","الكمية")])
-        _plotly_donut(bc_share_p[t("Brand Category","الفئة التجارية")].tolist(),
-                      bc_share_p[t("Qty","الكمية")].tolist(),
-                      title=t("Brand Category Share","حصة الفئة التجارية"))
+        if brand_cat_col and qty_col:
+            bc_share_p = (pdf_vendor.copy()
+                          .assign(**{brand_cat_col: pdf_vendor[brand_cat_col].replace("","(No Brand)").fillna("(No Brand)")})
+                          .groupby(brand_cat_col, as_index=False)[qty_col]
+                          .sum().sort_values(qty_col, ascending=False))
+            bc_share_p[qty_col] = _to_num(bc_share_p[qty_col])
+            _plotly_donut(bc_share_p[brand_cat_col].tolist(),
+                          bc_share_p[qty_col].tolist(),
+                          title=t("Brand Category Share","حصة الفئة التجارية"))
 
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
     st.markdown(f"#### 📋 {t('Full Purchase Detail','تفاصيل المشتريات الكاملة')}")
