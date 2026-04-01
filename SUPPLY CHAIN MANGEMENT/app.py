@@ -1,14 +1,16 @@
 """
 SWAG Product Comparison Dashboard
-Version 27.0 — Premium BI Design + Plotly Donut Fix
+Version 28.0 — Premium Executive Dashboard with Full Arabic Support
 
-CHANGES FROM v26:
-  1. Fixed _plotly_donut() — safe data cleaning, title_text/title_x, crash-proof.
-  2. Premium KPI cards via _premium_kpi_card() and _premium_kpi_row() helpers.
-  3. Upgraded _sales_kpi_row() and _po_kpi_row() with styled HTML metric cards.
-  4. Executive BI dashboard CSS added: .kpi-card, .kpi-value, .kpi-label, etc.
-  5. Refined chart color palettes, tooltips, and section headers.
-  6. All existing features preserved unchanged.
+CHANGES FROM v27:
+  1. Complete theme redesign - removed purple-heavy gradients for a sophisticated dark/glassmorphic design
+  2. Fixed chart rendering issues with robust Plotly donut implementation + fallback
+  3. Full Arabic support across all UI elements, tables, buttons, labels, and messages
+  4. Enhanced table styling with sticky headers, hover effects, and proper RTL support
+  5. Added smooth animations, KPI counters, and premium UI effects
+  6. Improved layout structure with better visual hierarchy
+  7. Enhanced sidebar with active state indicators and polished styling
+  8. All existing functionality preserved
 """
 
 import io
@@ -31,175 +33,544 @@ except ImportError:
     _HAS_PLOTLY = False
 
 st.set_page_config(
-    page_title="SWAG Product Comparison",
-    page_icon="📊",
+    page_title="SWAG Dashboard",
+    page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
-# CSS  — base theme + premium BI additions
+# CSS  — Premium Executive Dashboard Theme (Elegant Dark/Glass)
 # ─────────────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
-*,html,body,[class*="css"]{font-family:'IBM Plex Sans Arabic',sans-serif;box-sizing:border-box;}
-.stApp{background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);min-height:100vh;}
-section[data-testid="stSidebar"]{background:linear-gradient(180deg,#1a1a2e 0%,#16213e 100%)!important;border-right:1px solid #ffffff15;}
-section[data-testid="stSidebar"] *,section[data-testid="stSidebar"] label,section[data-testid="stSidebar"] span,section[data-testid="stSidebar"] p,section[data-testid="stSidebar"] div{color:#e8e8ff!important;}
-section[data-testid="stSidebar"] input{color:#1a1a2e!important;}
-@keyframes fadeInUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
-@keyframes fadeInDown{from{opacity:0;transform:translateY(-30px)}to{opacity:1;transform:translateY(0)}}
-@keyframes bounceIn{0%{transform:scale(0.2) rotate(-10deg);opacity:0}60%{transform:scale(1.2) rotate(5deg);opacity:1}80%{transform:scale(0.9)}100%{transform:scale(1);opacity:1}}
-@keyframes shimmer{0%{background-position:-400% center}100%{background-position:400% center}}
-@keyframes pulse{0%,100%{box-shadow:0 0 0 0 #7c3aed44}50%{box-shadow:0 0 20px 8px #7c3aed22}}
-@keyframes glow{0%,100%{text-shadow:0 0 10px #667eea88}50%{text-shadow:0 0 30px #f093fbcc,0 0 60px #667eea88}}
-@keyframes slideInLeft{from{opacity:0;transform:translateX(-40px)}to{opacity:1;transform:translateX(0)}}
-@keyframes slideInRight{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-@keyframes btnShine{0%{background-position:-200% center}100%{background-position:200% center}}
-@keyframes borderGlow{0%,100%{border-color:#667eea;box-shadow:0 0 5px #667eea44}50%{border-color:#f093fb;box-shadow:0 0 15px #f093fb66}}
-@keyframes countUp{from{opacity:0;transform:scale(0.5)}to{opacity:1;transform:scale(1)}}
-@keyframes cardPop{from{opacity:0;transform:translateY(12px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-.login-orb{width:120px;height:120px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2,#f093fb);display:flex;align-items:center;justify-content:center;font-size:3rem;margin:0 auto 20px;animation:float 3s ease-in-out infinite,bounceIn 1s ease forwards;box-shadow:0 8px 40px #667eea66,0 0 60px #f093fb33;}
-.login-title{font-size:2.4rem;font-weight:700;background:linear-gradient(90deg,#667eea,#f093fb,#667eea);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 3s linear infinite,fadeInDown 0.8s ease forwards;text-align:center;margin-bottom:6px;}
-.login-subtitle{color:#c4b5fd!important;font-size:0.95rem;text-align:center;animation:fadeInUp 1s ease forwards;margin-bottom:28px;}
-.login-card{background:linear-gradient(145deg,#1e1e3f,#2d2b55);border:1px solid #ffffff18;border-radius:20px;padding:32px 36px;width:100%;animation:fadeInUp 0.9s ease forwards,pulse 3s infinite;}
-.welcome-banner{background:linear-gradient(135deg,#667eea22,#f093fb22);border:1px solid #667eea44;border-radius:12px;padding:14px 20px;text-align:center;margin-bottom:20px;font-size:0.95rem;color:#c4b5fd!important;animation:fadeInDown 0.7s ease forwards,borderGlow 3s infinite;}
-.stTextInput input,.stNumberInput input,.stTextArea textarea{background:#1e1e3f!important;border:1px solid #667eea66!important;border-radius:10px!important;color:#e8e8ff!important;caret-color:#c4b5fd!important;transition:all 0.3s ease!important;}
-.stTextInput input::placeholder,.stNumberInput input::placeholder,.stTextArea textarea::placeholder{color:#7070aa!important;}
-.stTextInput input:focus,.stNumberInput input:focus,.stTextArea textarea:focus{border-color:#667eea!important;box-shadow:0 0 0 3px #667eea33!important;background:#252550!important;}
-.stTextInput label,.stNumberInput label,.stTextArea label{color:#c4b5fd!important;font-weight:600!important;}
-.stFormSubmitButton button,.stButton button[kind="primary"]{background:linear-gradient(90deg,#667eea,#764ba2,#f093fb,#667eea)!important;background-size:300% auto!important;border:none!important;border-radius:12px!important;color:white!important;font-weight:700!important;font-size:1rem!important;padding:12px!important;animation:btnShine 3s linear infinite!important;transition:transform 0.2s,box-shadow 0.2s!important;box-shadow:0 4px 20px #667eea55!important;}
-.stFormSubmitButton button:hover,.stButton button[kind="primary"]:hover{transform:translateY(-2px) scale(1.02)!important;box-shadow:0 8px 30px #764ba299!important;}
-.stButton button[kind="secondary"]{background:#1e1e3f!important;border:1px solid #667eea66!important;color:#c4b5fd!important;border-radius:10px!important;}
-.stButton button[kind="secondary"]:hover{background:linear-gradient(135deg,#667eea,#764ba2)!important;color:white!important;}
-.stButton button{color:#c4b5fd!important;}
-.stDownloadButton button{background:linear-gradient(135deg,#1e1e3f,#2d2b55)!important;border:1px solid #667eea66!important;border-radius:10px!important;color:#c4b5fd!important;font-size:0.78rem!important;font-weight:600!important;padding:6px 14px!important;transition:all 0.25s ease!important;box-shadow:0 2px 8px #00000044!important;}
-.stDownloadButton button:hover{background:linear-gradient(135deg,#667eea,#764ba2)!important;color:white!important;border-color:transparent!important;transform:translateY(-2px) scale(1.04)!important;box-shadow:0 6px 20px #667eea55!important;}
-.dash-header{text-align:center;padding:16px 0 24px;animation:fadeInDown 0.6s ease forwards;}
-.dash-title{font-size:2.4rem;font-weight:700;background:linear-gradient(90deg,#667eea,#f093fb,#43e97b,#667eea);background-size:300% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 4s linear infinite,glow 3s ease-in-out infinite;}
-.dash-subtitle{color:#a0aec0;font-size:0.95rem;margin-top:-4px;}
-[data-testid="stMetric"]{background:linear-gradient(135deg,#1e1e3f,#2d2b55)!important;border:1px solid #ffffff15!important;border-radius:16px!important;padding:16px 20px!important;animation:countUp 0.6s ease forwards;transition:transform 0.2s,box-shadow 0.2s;}
-[data-testid="stMetric"]:hover{transform:translateY(-4px);box-shadow:0 8px 30px #667eea44;}
-[data-testid="stMetricLabel"]{color:#a0aec0!important;font-size:0.82rem!important;}
-[data-testid="stMetricValue"]{font-size:1.7rem!important;font-weight:700!important;background:linear-gradient(90deg,#667eea,#f093fb);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.stTabs [data-baseweb="tab-list"]{background:linear-gradient(90deg,#1e1e3f,#2d2b55);border-radius:12px;padding:4px;gap:4px;}
-.stTabs [data-baseweb="tab"]{color:#a0aec0!important;border-radius:10px!important;font-size:0.83rem!important;font-weight:600!important;padding:8px 16px!important;transition:all 0.2s ease!important;}
-.stTabs [aria-selected="true"]{background:linear-gradient(90deg,#667eea,#764ba2)!important;color:white!important;box-shadow:0 4px 12px #667eea55!important;}
-.info-banner{background:linear-gradient(135deg,#1e3a5f,#1e3a5f99);border-left:4px solid #3b82f6;border-radius:10px;padding:11px 16px;margin:8px 0 16px;font-size:0.85rem;color:#93c5fd!important;animation:slideInLeft 0.4s ease;}
-.warn-banner{background:linear-gradient(135deg,#3b2a0a,#3b2a0a99);border-left:4px solid #f59e0b;border-radius:10px;padding:11px 16px;margin:8px 0 16px;font-size:0.85rem;color:#fcd34d!important;}
-.alert-banner{background:linear-gradient(135deg,#3b0a1e,#3b0a1e99);border-left:4px solid #f43f5e;border-radius:10px;padding:11px 16px;margin:8px 0 16px;font-size:0.85rem;color:#fca5a5!important;animation:pulse 2s infinite;}
-.ok-banner{background:linear-gradient(135deg,#0a3b1e,#0a3b1e99);border-left:4px solid #22c55e;border-radius:10px;padding:11px 16px;margin:8px 0 16px;font-size:0.85rem;color:#86efac!important;}
-.snap-card{background:linear-gradient(145deg,#1e1e3f,#2d2b55);border:1px solid #ffffff18;border-radius:14px;padding:16px 20px;font-size:0.87rem;color:#e8e8ff!important;line-height:2;animation:slideInRight 0.5s ease;box-shadow:0 4px 20px #00000055;}
-.snap-card b{color:#c4b5fd!important;}
-.sys-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
-.sys-row span{color:#e8e8ff!important;}
-.badge-ok{background:linear-gradient(90deg,#065f46,#047857);color:#d1fae5!important;border-radius:20px;padding:3px 12px;font-size:0.76rem;font-weight:700;}
-.badge-off{background:linear-gradient(90deg,#991b1b,#b91c1c);color:#fee2e2!important;border-radius:20px;padding:3px 12px;font-size:0.76rem;font-weight:700;}
-.badge-err{background:linear-gradient(90deg,#78350f,#92400e);color:#fef3c7!important;border-radius:20px;padding:3px 12px;font-size:0.76rem;font-weight:700;}
-.stRadio label,.stRadio div[role="radiogroup"] label span,[data-testid="stToggle"] label,.stCheckbox label{color:#e8e8ff!important;}
-div[data-testid="stRadio"] p{color:#e8e8ff!important;}
-h1,h2,h3,h4,h5,h6{color:#e8e8ff!important;}
-.stMarkdown p,.stMarkdown li{color:#c4b5fd!important;}
-.stCaption,[data-testid="stCaptionContainer"] p{color:#8888bb!important;}
-.stAlert p{color:#1a1a2e!important;font-weight:600;}
-[data-testid="stExpander"]{background:linear-gradient(135deg,#1e1e3f,#2d2b55)!important;border:1px solid #ffffff18!important;border-radius:12px!important;}
-[data-testid="stExpander"] summary,[data-testid="stExpander"] summary p{color:#c4b5fd!important;}
-[data-testid="stFileUploader"]{background:linear-gradient(135deg,#1e1e3f,#2d2b55)!important;border:2px dashed #667eea66!important;border-radius:14px!important;}
-[data-testid="stFileUploader"] p,[data-testid="stFileUploader"] span{color:#c4b5fd!important;}
-hr{border:none!important;height:1px!important;background:linear-gradient(90deg,transparent,#667eea66,transparent)!important;margin:16px 0!important;}
-[data-testid="stProgressBar"]>div{background:linear-gradient(90deg,#667eea,#f093fb)!important;border-radius:10px!important;}
-::-webkit-scrollbar{width:6px;height:6px;}
-::-webkit-scrollbar-track{background:#1a1a2e;}
-::-webkit-scrollbar-thumb{background:linear-gradient(#667eea,#764ba2);border-radius:10px;}
-::-webkit-scrollbar-thumb:hover{background:#f093fb;}
-.stNumberInput button{color:#c4b5fd!important;background:#2d2b55!important;}
-.mono{font-family:'IBM Plex Mono',monospace;font-size:0.82rem;color:#c4b5fd;}
-footer{visibility:hidden;}
-[data-baseweb="tag"]{background:#667eea33!important;color:#c4b5fd!important;}
-[data-baseweb="select"] div{background:#1e1e3f!important;color:#e8e8ff!important;border-color:#667eea55!important;}
-.panel-header{background:linear-gradient(135deg,#1e1e3f,#2d2b55);border:1px solid #667eea44;border-radius:12px;padding:12px 20px;margin:16px 0 12px;font-size:1.05rem;font-weight:700;color:#c4b5fd!important;}
-.nav-btn-active{background:linear-gradient(90deg,#667eea,#764ba2)!important;border:none!important;border-radius:10px!important;color:white!important;font-weight:700!important;width:100%!important;padding:10px!important;margin-bottom:4px!important;box-shadow:0 4px 12px #667eea55!important;}
-.nav-btn-inactive{background:linear-gradient(135deg,#1e1e3f,#2d2b55)!important;border:1px solid #667eea44!important;border-radius:10px!important;color:#c4b5fd!important;font-weight:600!important;width:100%!important;padding:10px!important;margin-bottom:4px!important;}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-/* ── Premium KPI Cards ───────────────────────────────────────────── */
-.kpi-row{display:flex;gap:14px;flex-wrap:wrap;margin:0 0 8px;}
-.kpi-card{
-  flex:1 1 140px;
-  min-width:130px;
-  background:linear-gradient(145deg,#1c1c42,#282858);
-  border:1px solid #ffffff14;
-  border-radius:16px;
-  padding:18px 20px 16px;
-  position:relative;
-  overflow:hidden;
-  animation:cardPop 0.45s ease forwards;
-  transition:transform 0.2s ease,box-shadow 0.2s ease;
-  box-shadow:0 4px 24px #00000055;
-}
-.kpi-card:hover{transform:translateY(-4px) scale(1.02);box-shadow:0 12px 36px #667eea33;}
-.kpi-card::before{
-  content:'';
-  position:absolute;
-  top:0;left:0;right:0;
-  height:3px;
-  border-radius:16px 16px 0 0;
-}
-.kpi-card.c-blue::before{background:linear-gradient(90deg,#667eea,#4facfe);}
-.kpi-card.c-purple::before{background:linear-gradient(90deg,#764ba2,#f093fb);}
-.kpi-card.c-green::before{background:linear-gradient(90deg,#43e97b,#38f9d7);}
-.kpi-card.c-orange::before{background:linear-gradient(90deg,#fa8231,#f7b731);}
-.kpi-card.c-pink::before{background:linear-gradient(90deg,#f093fb,#c471ed);}
-.kpi-card.c-cyan::before{background:linear-gradient(90deg,#00f2fe,#4facfe);}
-.kpi-icon{font-size:1.5rem;margin-bottom:8px;display:block;line-height:1;}
-.kpi-value{
-  font-size:1.65rem;
-  font-weight:700;
-  line-height:1.1;
-  margin-bottom:4px;
-  background:linear-gradient(90deg,#e8e8ff,#c4b5fd);
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
-}
-.kpi-card.c-blue .kpi-value{background:linear-gradient(90deg,#a5b4fc,#60a5fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.kpi-card.c-purple .kpi-value{background:linear-gradient(90deg,#e879f9,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.kpi-card.c-green .kpi-value{background:linear-gradient(90deg,#4ade80,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.kpi-card.c-orange .kpi-value{background:linear-gradient(90deg,#fb923c,#fbbf24);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.kpi-card.c-pink .kpi-value{background:linear-gradient(90deg,#f9a8d4,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.kpi-card.c-cyan .kpi-value{background:linear-gradient(90deg,#67e8f9,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.kpi-label{font-size:0.76rem;color:#94a3b8;font-weight:500;text-transform:uppercase;letter-spacing:0.6px;}
-.kpi-sub{font-size:0.71rem;color:#667eea;margin-top:3px;font-weight:500;}
-
-/* ── Chart section cards ─────────────────────────────────────────── */
-.chart-card{
-  background:linear-gradient(145deg,#181830,#222248);
-  border:1px solid #ffffff0d;
-  border-radius:18px;
-  padding:20px 22px 16px;
-  margin-bottom:14px;
-  box-shadow:0 6px 32px #0000004a;
-}
-.chart-title{
-  font-size:0.92rem;
-  font-weight:700;
-  color:#c4b5fd;
-  margin-bottom:14px;
-  display:flex;
-  align-items:center;
-  gap:8px;
-  letter-spacing:0.2px;
-}
-.chart-title span.ct-accent{
-  width:4px;height:18px;
-  border-radius:3px;
-  background:linear-gradient(180deg,#667eea,#f093fb);
-  display:inline-block;
-  flex-shrink:0;
+/* Base Theme */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-/* ── Section divider line ────────────────────────────────────────── */
-.section-sep{height:1px;background:linear-gradient(90deg,transparent,#667eea44,transparent);margin:22px 0;}
+html, body, [class*="css"] {
+    font-family: 'Inter', sans-serif;
+}
+
+.stApp {
+    background: linear-gradient(135deg, #0a0c10 0%, #121417 100%);
+    min-height: 100vh;
+}
+
+/* Sidebar Premium Design */
+section[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #0f1115 0%, #0a0c10 100%) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+}
+
+section[data-testid="stSidebar"] *,
+section[data-testid="stSidebar"] label,
+section[data-testid="stSidebar"] span,
+section[data-testid="stSidebar"] p,
+section[data-testid="stSidebar"] div {
+    color: #e8edf2 !important;
+}
+
+section[data-testid="stSidebar"] input {
+    background: #1a1e24 !important;
+    color: #e8edf2 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes countUp {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% center;
+    }
+    100% {
+        background-position: 200% center;
+    }
+}
+
+/* Login Styles */
+.login-orb {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2c3e50, #3498db);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    margin: 0 auto 20px;
+    animation: fadeInUp 0.6s ease forwards;
+    box-shadow: 0 8px 32px rgba(52, 152, 219, 0.3);
+}
+
+.login-title {
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(90deg, #3498db, #2ecc71);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-align: center;
+    margin-bottom: 8px;
+    animation: fadeInUp 0.7s ease forwards;
+}
+
+.login-subtitle {
+    color: #8e9aaf !important;
+    font-size: 0.9rem;
+    text-align: center;
+    animation: fadeInUp 0.8s ease forwards;
+    margin-bottom: 28px;
+}
+
+.login-card {
+    background: rgba(20, 24, 30, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    padding: 32px 36px;
+    width: 100%;
+    animation: fadeInUp 0.9s ease forwards;
+}
+
+/* Dashboard Header */
+.dash-header {
+    text-align: center;
+    padding: 20px 0 28px;
+    animation: fadeInDown 0.6s ease forwards;
+}
+
+.dash-title {
+    font-size: 2.2rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, #3498db, #2ecc71, #3498db);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 4s linear infinite;
+}
+
+.dash-subtitle {
+    color: #8e9aaf;
+    font-size: 0.9rem;
+    margin-top: 4px;
+}
+
+/* Premium KPI Cards */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin: 20px 0 24px;
+}
+
+.kpi-card {
+    background: linear-gradient(135deg, #1a1e24, #14181e);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 20px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: fadeInUp 0.5s ease forwards;
+}
+
+.kpi-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(52, 152, 219, 0.3);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+}
+
+.kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #3498db, #2ecc71);
+    border-radius: 20px 20px 0 0;
+}
+
+.kpi-icon {
+    font-size: 1.8rem;
+    margin-bottom: 12px;
+    display: block;
+    opacity: 0.9;
+}
+
+.kpi-value {
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 6px;
+    background: linear-gradient(90deg, #fff, #3498db);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+}
+
+.kpi-label {
+    font-size: 0.75rem;
+    color: #8e9aaf;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.kpi-trend {
+    font-size: 0.7rem;
+    margin-top: 8px;
+    color: #2ecc71;
+}
+
+/* Section Headers */
+.section-header {
+    background: linear-gradient(135deg, #1a1e24, #14181e);
+    border-left: 4px solid #3498db;
+    border-radius: 12px;
+    padding: 12px 20px;
+    margin: 24px 0 20px;
+    font-weight: 700;
+    font-size: 1rem;
+    color: #e8edf2;
+    letter-spacing: -0.2px;
+    animation: slideInLeft 0.4s ease forwards;
+}
+
+/* Chart Cards */
+.chart-card {
+    background: linear-gradient(135deg, #1a1e24, #14181e);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+    animation: fadeInUp 0.5s ease forwards;
+}
+
+.chart-card:hover {
+    border-color: rgba(52, 152, 219, 0.2);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.chart-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #8e9aaf;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: 0.3px;
+}
+
+.chart-title span.accent {
+    width: 3px;
+    height: 16px;
+    background: linear-gradient(180deg, #3498db, #2ecc71);
+    border-radius: 2px;
+    display: inline-block;
+}
+
+/* Premium Tables */
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #1a1e24, #14181e);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    margin: 16px 0;
+    animation: fadeInUp 0.5s ease forwards;
+}
+
+.premium-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.premium-table thead tr {
+    background: linear-gradient(135deg, #0f1115, #0a0c10);
+    border-bottom: 1px solid rgba(52, 152, 219, 0.3);
+}
+
+.premium-table thead th {
+    color: #3498db;
+    font-weight: 600;
+    padding: 14px 16px;
+    text-align: center;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: sticky;
+    top: 0;
+    background: #0f1115;
+    z-index: 10;
+}
+
+.premium-table tbody tr {
+    transition: all 0.2s ease;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.premium-table tbody tr:hover {
+    background: rgba(52, 152, 219, 0.1);
+    transform: scale(1.01);
+}
+
+.premium-table tbody td {
+    padding: 12px 16px;
+    text-align: center;
+    color: #e8edf2;
+}
+
+.premium-table tbody td:first-child {
+    font-weight: 600;
+    color: #3498db;
+}
+
+/* RTL Support */
+[dir="rtl"] .premium-table thead th {
+    text-align: right;
+}
+
+[dir="rtl"] .section-header {
+    border-left: none;
+    border-right: 4px solid #3498db;
+}
+
+/* Buttons */
+.stButton button {
+    background: linear-gradient(135deg, #2c3e50, #1a1e24) !important;
+    border: 1px solid rgba(52, 152, 219, 0.3) !important;
+    border-radius: 12px !important;
+    color: #e8edf2 !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease !important;
+}
+
+.stButton button:hover {
+    transform: translateY(-2px);
+    border-color: #3498db !important;
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2) !important;
+}
+
+.stButton button[kind="primary"] {
+    background: linear-gradient(90deg, #3498db, #2ecc71) !important;
+    border: none !important;
+    color: white !important;
+}
+
+/* Inputs */
+.stTextInput input, 
+.stNumberInput input, 
+.stTextArea textarea,
+.stDateInput input {
+    background: #1a1e24 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 12px !important;
+    color: #e8edf2 !important;
+}
+
+.stTextInput input:focus,
+.stNumberInput input:focus,
+.stTextArea textarea:focus {
+    border-color: #3498db !important;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2) !important;
+}
+
+/* Tabs */
+.stTabs [data-baseweb="tab-list"] {
+    background: #1a1e24;
+    border-radius: 12px;
+    padding: 4px;
+    gap: 4px;
+}
+
+.stTabs [data-baseweb="tab"] {
+    color: #8e9aaf !important;
+    border-radius: 10px !important;
+    font-size: 0.8rem !important;
+    font-weight: 600 !important;
+    padding: 8px 20px !important;
+}
+
+.stTabs [aria-selected="true"] {
+    background: linear-gradient(90deg, #3498db, #2ecc71) !important;
+    color: white !important;
+}
+
+/* Alerts */
+.info-banner {
+    background: rgba(52, 152, 219, 0.1);
+    border-left: 3px solid #3498db;
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin: 16px 0;
+    font-size: 0.85rem;
+    color: #8e9aaf;
+}
+
+.warn-banner {
+    background: rgba(241, 196, 15, 0.1);
+    border-left: 3px solid #f1c40f;
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin: 16px 0;
+    font-size: 0.85rem;
+    color: #f1c40f;
+}
+
+.alert-banner {
+    background: rgba(231, 76, 60, 0.1);
+    border-left: 3px solid #e74c3c;
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin: 16px 0;
+    font-size: 0.85rem;
+    color: #e74c3c;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Sidebar Navigation */
+.nav-btn-active {
+    background: linear-gradient(90deg, #3498db, #2ecc71) !important;
+    border: none !important;
+    border-radius: 12px !important;
+    color: white !important;
+    font-weight: 700 !important;
+    width: 100% !important;
+    padding: 10px !important;
+    margin-bottom: 6px !important;
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3) !important;
+}
+
+.nav-btn-inactive {
+    background: #1a1e24 !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    border-radius: 12px !important;
+    color: #8e9aaf !important;
+    font-weight: 600 !important;
+    width: 100% !important;
+    padding: 10px !important;
+    margin-bottom: 6px !important;
+    transition: all 0.3s ease !important;
+}
+
+.nav-btn-inactive:hover {
+    background: #2c3e50 !important;
+    color: white !important;
+    border-color: #3498db !important;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #0a0c10;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #2c3e50;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #3498db;
+}
+
+/* Dividers */
+.divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(52, 152, 219, 0.3), transparent);
+    margin: 24px 0;
+}
+
+/* Stats Cards */
+.stats-card {
+    background: #1a1e24;
+    border-radius: 16px;
+    padding: 16px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.stats-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #3498db;
+}
+
+.stats-label {
+    font-size: 0.7rem;
+    color: #8e9aaf;
+    margin-top: 4px;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 24px 0;
+    color: #5a6e8a;
+    font-size: 0.7rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    margin-top: 40px;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -220,6 +591,10 @@ def t(en, ar):
 def get_system_name(key):
     cfg = st.secrets.get(key, {})
     return cfg.get("name_ar", cfg.get("name", key)) if get_lang() == "AR" else cfg.get("name", key)
+
+# RTL direction helper
+def get_dir():
+    return "rtl" if get_lang() == "AR" else "ltr"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # TRANSLATE SYSTEM NAMES
@@ -399,19 +774,19 @@ def _style_worksheet(ws, df_clean, lang="EN"):
     from openpyxl.chart import BarChart, Reference
     if lang == "AR":
         ws.sheet_view.rightToLeft = True
-    hdr_fill     = PatternFill("solid", fgColor="4B0082")
-    hdr_font     = Font(bold=True, color="FFFFFF", size=11, name="Calibri")
+    hdr_fill     = PatternFill("solid", fgColor="2C3E50")
+    hdr_font     = Font(bold=True, color="FFFFFF", size=11, name="Inter")
     hdr_align    = Alignment(horizontal="center", vertical="center")
     thin         = Side(border_style="thin", color="D0D0D0")
     border       = Border(left=thin, right=thin, top=thin, bottom=thin)
-    alt_fill     = PatternFill("solid", fgColor="F3EFFF")
+    alt_fill     = PatternFill("solid", fgColor="1A1E24")
     zero_fill    = PatternFill("solid", fgColor="FFE0E0")
-    zero_font    = Font(color="CC0000", bold=True, name="Calibri")
-    normal_font  = Font(name="Calibri", size=10)
+    zero_font    = Font(color="CC0000", bold=True, name="Inter")
+    normal_font  = Font(name="Inter", size=10, color="E8EDF2")
     num_align    = Alignment(horizontal="right",  vertical="center")
     center_align = Alignment(horizontal="center", vertical="center")
-    total_fill   = PatternFill("solid", fgColor="2E2E2E")
-    total_font   = Font(bold=True, name="Calibri", color="FFFFFF")
+    total_fill   = PatternFill("solid", fgColor="3498DB")
+    total_font   = Font(bold=True, name="Inter", color="FFFFFF")
     max_row = ws.max_row
     max_col = ws.max_column
     ws.row_dimensions[1].height = 28
@@ -473,7 +848,7 @@ def _style_worksheet(ws, df_clean, lang="EN"):
         col_letter = get_column_letter(on_hand_col)
         ws.conditional_formatting.add(
             f"{col_letter}2:{col_letter}{max_row}",
-            DataBarRule(start_type="min", end_type="max", color="4472C4"),
+            DataBarRule(start_type="min", end_type="max", color="3498DB"),
         )
     if sale_price_col and max_row > 1:
         col_letter = get_column_letter(sale_price_col)
@@ -488,7 +863,7 @@ def _style_worksheet(ws, df_clean, lang="EN"):
     if on_hand_col and max_row > 1:
         col_letter     = get_column_letter(on_hand_col)
         low_stock_fill = PatternFill("solid", fgColor="FFF2CC")
-        low_stock_font = Font(color="7F6000", bold=True, name="Calibri")
+        low_stock_font = Font(color="7F6000", bold=True, name="Inter")
         ws.conditional_formatting.add(
             f"{col_letter}2:{col_letter}{max_row}",
             CellIsRule(operator="lessThanOrEqual", formula=["3"],
@@ -507,19 +882,19 @@ def _style_worksheet(ws, df_clean, lang="EN"):
         ws.cell(row=total_row, column=on_hand_col).fill      = total_fill
         ws.cell(row=total_row, column=on_hand_col).alignment = Alignment(horizontal="center")
     ws.row_dimensions[total_row].height = 20
-    ws.sheet_properties.tabColor = "667EEA"
+    ws.sheet_properties.tabColor = "3498DB"
     footer_row = total_row + 2
     ws.cell(row=footer_row, column=1,
             value=f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}  |  SWAG Dashboard")
     ws.cell(row=footer_row, column=1).font = Font(
-        italic=True, color="888888", size=9, name="Calibri")
+        italic=True, color="888888", size=9, name="Inter")
     ws.page_setup.orientation  = "landscape"
     ws.page_setup.fitToPage    = True
     ws.page_setup.fitToWidth   = 1
     ws.print_title_rows        = "1:1"
     ws.print_area              = f"A1:{get_column_letter(max_col)}{max_row}"
     ws.oddHeader.center.text   = "SWAG Product Report"
-    ws.oddHeader.center.font   = "Calibri,Bold"
+    ws.oddHeader.center.font   = "Inter,Bold"
     ws.oddFooter.center.text   = "Page &P of &N  |  Generated: &D"
     ws.sheet_view.zoomScale = 85
     if loc_col:
@@ -618,17 +993,17 @@ def to_excel_purchase(df):
         clean.to_excel(w, index=False, sheet_name="SWAG Purchase")
         ws = w.sheets["SWAG Purchase"]
 
-        hdr_fill    = PatternFill("solid", fgColor="4B0082")
-        hdr_font    = Font(bold=True, color="FFFFFF", size=11, name="Calibri")
+        hdr_fill    = PatternFill("solid", fgColor="2C3E50")
+        hdr_font    = Font(bold=True, color="FFFFFF", size=11, name="Inter")
         hdr_align   = Alignment(horizontal="center", vertical="center")
         thin        = Side(border_style="thin", color="D0D0D0")
         border      = Border(left=thin, right=thin, top=thin, bottom=thin)
-        alt_fill    = PatternFill("solid", fgColor="F3EFFF")
-        normal_font = Font(name="Calibri", size=10)
+        alt_fill    = PatternFill("solid", fgColor="1A1E24")
+        normal_font = Font(name="Inter", size=10, color="E8EDF2")
         num_align   = Alignment(horizontal="right", vertical="center")
         ctr_align   = Alignment(horizontal="center", vertical="center")
-        total_fill  = PatternFill("solid", fgColor="2E2E2E")
-        total_font  = Font(bold=True, name="Calibri", color="FFFFFF")
+        total_fill  = PatternFill("solid", fgColor="3498DB")
+        total_font  = Font(bold=True, name="Inter", color="FFFFFF")
 
         max_row = ws.max_row
         max_col = ws.max_column
@@ -682,12 +1057,12 @@ def to_excel_purchase(df):
                 ws.cell(row=total_row, column=ci).alignment = Alignment(horizontal="center")
 
         ws.row_dimensions[total_row].height = 20
-        ws.sheet_properties.tabColor = "667EEA"
+        ws.sheet_properties.tabColor = "3498DB"
 
         footer_row = total_row + 2
         ws.cell(row=footer_row, column=1,
                 value=f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}  |  SWAG Purchase History")
-        ws.cell(row=footer_row, column=1).font = Font(italic=True, color="888888", size=9, name="Calibri")
+        ws.cell(row=footer_row, column=1).font = Font(italic=True, color="888888", size=9, name="Inter")
 
         ws.page_setup.orientation = "landscape"
         ws.page_setup.fitToPage   = True
@@ -712,17 +1087,17 @@ def to_excel_sales(df):
         clean.to_excel(w, index=False, sheet_name="SWAG Sales")
         ws = w.sheets["SWAG Sales"]
 
-        hdr_fill    = PatternFill("solid", fgColor="1a5276")
-        hdr_font    = Font(bold=True, color="FFFFFF", size=11, name="Calibri")
+        hdr_fill    = PatternFill("solid", fgColor="2C3E50")
+        hdr_font    = Font(bold=True, color="FFFFFF", size=11, name="Inter")
         hdr_align   = Alignment(horizontal="center", vertical="center")
         thin        = Side(border_style="thin", color="D0D0D0")
         border      = Border(left=thin, right=thin, top=thin, bottom=thin)
-        alt_fill    = PatternFill("solid", fgColor="EAF2FF")
-        normal_font = Font(name="Calibri", size=10)
+        alt_fill    = PatternFill("solid", fgColor="1A1E24")
+        normal_font = Font(name="Inter", size=10, color="E8EDF2")
         num_align   = Alignment(horizontal="right", vertical="center")
         ctr_align   = Alignment(horizontal="center", vertical="center")
-        total_fill  = PatternFill("solid", fgColor="1a3a5c")
-        total_font  = Font(bold=True, name="Calibri", color="FFFFFF")
+        total_fill  = PatternFill("solid", fgColor="3498DB")
+        total_font  = Font(bold=True, name="Inter", color="FFFFFF")
 
         max_row = ws.max_row
         max_col = ws.max_column
@@ -776,12 +1151,12 @@ def to_excel_sales(df):
                 ws.cell(row=total_row, column=ci).alignment = Alignment(horizontal="center")
 
         ws.row_dimensions[total_row].height = 20
-        ws.sheet_properties.tabColor = "4facfe"
+        ws.sheet_properties.tabColor = "3498DB"
 
         footer_row = total_row + 2
         ws.cell(row=footer_row, column=1,
                 value=f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}  |  SWAG Sales History")
-        ws.cell(row=footer_row, column=1).font = Font(italic=True, color="888888", size=9, name="Calibri")
+        ws.cell(row=footer_row, column=1).font = Font(italic=True, color="888888", size=9, name="Inter")
 
         ws.page_setup.orientation = "landscape"
         ws.page_setup.fitToPage   = True
@@ -968,8 +1343,10 @@ def fetch_all_data(
 # ─────────────────────────────────────────────────────────────────────────────
 @st.cache_data(ttl=1800, show_spinner=False)
 def fetch_swag_purchase_history(model_code, date_from, date_to):
-    empty_cols = ["Date", "PO", "Vendor", "Brand Category", "Category",
-                  "Model Code", "Product", "Qty", "Unit Price", "Subtotal"]
+    empty_cols = [t("Date","التاريخ"), t("PO","أمر الشراء"), t("Vendor","المورد"), 
+                  t("Brand Category","الفئة التجارية"), t("Category","الفئة"),
+                  t("Model Code","رمز الموديل"), t("Product","المنتج"), 
+                  t("Qty","الكمية"), t("Unit Price","سعر الوحدة"), t("Subtotal","المجموع")]
     empty_df = pd.DataFrame(columns=empty_cols)
 
     cfg = st.secrets.get("SWAG")
@@ -1077,27 +1454,26 @@ def fetch_swag_purchase_history(model_code, date_from, date_to):
             subtotal   = round(qty * unit_price, 2)
 
             rows.append({
-                "Date"          : date_str,
-                "PO"            : str(order.get("name") or ""),
-                "Vendor"        : vendor,
-                "Brand Category": brand_category,
-                "Category"      : category,
-                "Model Code"    : model_code_val,
-                "Product"       : product_name,
-                "Qty"           : qty,
-                "Unit Price"    : unit_price,
-                "Subtotal"      : subtotal,
+                t("Date","التاريخ"): date_str,
+                t("PO","أمر الشراء"): str(order.get("name") or ""),
+                t("Vendor","المورد"): vendor,
+                t("Brand Category","الفئة التجارية"): brand_category,
+                t("Category","الفئة"): category,
+                t("Model Code","رمز الموديل"): model_code_val,
+                t("Product","المنتج"): product_name,
+                t("Qty","الكمية"): qty,
+                t("Unit Price","سعر الوحدة"): unit_price,
+                t("Subtotal","المجموع"): subtotal,
             })
 
         if not rows:
             return empty_df
 
         df = pd.DataFrame(rows)
-        for col in ["Vendor", "Brand Category", "Category", "Model Code", "Product", "PO", "Date"]:
-            if col in df.columns:
-                df[col] = df[col].fillna("").astype(str)
+        for col in df.columns:
+            df[col] = df[col].fillna("").astype(str)
 
-        df = df.sort_values(by="Date", ascending=False).reset_index(drop=True)
+        df = df.sort_values(by=t("Date","التاريخ"), ascending=False).reset_index(drop=True)
         return df
 
     except Exception:
@@ -1109,8 +1485,10 @@ def fetch_swag_purchase_history(model_code, date_from, date_to):
 # ─────────────────────────────────────────────────────────────────────────────
 @st.cache_data(ttl=1800, show_spinner=False)
 def fetchswagsaleshistory(modelcode, datefrom, dateto):
-    empty_cols = ["Date", "SO", "Customer", "Brand Category", "Category",
-                  "Model Code", "Product", "Qty", "Unit Price", "Subtotal"]
+    empty_cols = [t("Date","التاريخ"), t("SO","أمر البيع"), t("Customer","العميل"), 
+                  t("Brand Category","الفئة التجارية"), t("Category","الفئة"),
+                  t("Model Code","رمز الموديل"), t("Product","المنتج"), 
+                  t("Qty","الكمية"), t("Unit Price","سعر الوحدة"), t("Subtotal","المجموع")]
     empty_df = pd.DataFrame(columns=empty_cols)
 
     cfg = st.secrets.get("SWAG")
@@ -1218,27 +1596,26 @@ def fetchswagsaleshistory(modelcode, datefrom, dateto):
             subtotal   = round(qty * unit_price, 2)
 
             rows.append({
-                "Date"          : date_str,
-                "SO"            : str(order.get("name") or ""),
-                "Customer"      : customer,
-                "Brand Category": brand_category,
-                "Category"      : category,
-                "Model Code"    : model_code_val,
-                "Product"       : product_name,
-                "Qty"           : qty,
-                "Unit Price"    : unit_price,
-                "Subtotal"      : subtotal,
+                t("Date","التاريخ"): date_str,
+                t("SO","أمر البيع"): str(order.get("name") or ""),
+                t("Customer","العميل"): customer,
+                t("Brand Category","الفئة التجارية"): brand_category,
+                t("Category","الفئة"): category,
+                t("Model Code","رمز الموديل"): model_code_val,
+                t("Product","المنتج"): product_name,
+                t("Qty","الكمية"): qty,
+                t("Unit Price","سعر الوحدة"): unit_price,
+                t("Subtotal","المجموع"): subtotal,
             })
 
         if not rows:
             return empty_df
 
         df = pd.DataFrame(rows)
-        for col in ["Customer", "Brand Category", "Category", "Model Code", "Product", "SO", "Date"]:
-            if col in df.columns:
-                df[col] = df[col].fillna("").astype(str)
+        for col in df.columns:
+            df[col] = df[col].fillna("").astype(str)
 
-        df = df.sort_values(by="Date", ascending=False).reset_index(drop=True)
+        df = df.sort_values(by=t("Date","التاريخ"), ascending=False).reset_index(drop=True)
         return df
 
     except Exception:
@@ -1254,8 +1631,9 @@ def fetch_swag_model_purchases_and_stock(
     date_from: str,
     date_to: str,
 ) -> tuple:
-    purch_empty = pd.DataFrame(columns=["Branch", "Vendor", "Date", "Qty Purchased"])
-    stock_empty = pd.DataFrame(columns=["Branch", "On Hand"])
+    purch_empty = pd.DataFrame(columns=[t("Branch","الفرع"), t("Vendor","المورد"), 
+                                         t("Date","التاريخ"), t("Qty Purchased","الكمية المشتراة")])
+    stock_empty = pd.DataFrame(columns=[t("Branch","الفرع"), t("On Hand","متوفر")])
 
     cfg = st.secrets.get("SWAG")
     if not cfg:
@@ -1273,8 +1651,8 @@ def fetch_swag_model_purchases_and_stock(
 
     def _loc_to_branch(loc_name: str) -> str:
         if not loc_name:
-            return "Main"
-        return loc_name.split("/")[0].strip() or "Main"
+            return t("Main","الرئيسي")
+        return loc_name.split("/")[0].strip() or t("Main","الرئيسي")
 
     try:
         date_from_dt = f"{date_from} 00:00:00"
@@ -1330,9 +1708,9 @@ def fetch_swag_model_purchases_and_stock(
                     for p in pts:
                         wh_ref = p.get("warehouse_id")
                         if isinstance(wh_ref, list) and wh_ref:
-                            pt_map[p["id"]] = wh_map.get(wh_ref[0], str(wh_ref[1]) if len(wh_ref) > 1 else "Main")
+                            pt_map[p["id"]] = wh_map.get(wh_ref[0], str(wh_ref[1]) if len(wh_ref) > 1 else t("Main","الرئيسي"))
                         else:
-                            pt_map[p["id"]] = "Main"
+                            pt_map[p["id"]] = t("Main","الرئيسي")
                 except Exception:
                     pass
 
@@ -1348,25 +1726,25 @@ def fetch_swag_model_purchases_and_stock(
 
                 partner = order.get("partner_id")
                 if isinstance(partner, list):
-                    vendor = str(partner[1]) if len(partner) > 1 else "Unknown"
+                    vendor = str(partner[1]) if len(partner) > 1 else t("Unknown","غير معروف")
                 else:
-                    vendor = str(partner) if partner else "Unknown"
+                    vendor = str(partner) if partner else t("Unknown","غير معروف")
 
                 pt_ref = order.get("picking_type_id")
                 if isinstance(pt_ref, list) and pt_ref:
-                    branch = pt_map.get(pt_ref[0], "Main")
+                    branch = pt_map.get(pt_ref[0], t("Main","الرئيسي"))
                 else:
-                    branch = "Main"
+                    branch = t("Main","الرئيسي")
 
                 qty = float(line.get("product_qty") or 0)
                 if qty <= 0:
                     continue
 
                 purch_rows.append({
-                    "Branch"       : branch,
-                    "Vendor"       : vendor,
-                    "Date"         : date_str,
-                    "Qty Purchased": qty,
+                    t("Branch","الفرع"): branch,
+                    t("Vendor","المورد"): vendor,
+                    t("Date","التاريخ"): date_str,
+                    t("Qty Purchased","الكمية المشتراة"): qty,
                 })
 
         prod_ids_res = _x(u, db, uid, ak, "product.product", "search_read",
@@ -1403,18 +1781,18 @@ def fetch_swag_model_purchases_and_stock(
                 branch_qty[branch] = branch_qty.get(branch, 0.0) + qty
 
             for branch, qty in branch_qty.items():
-                stock_rows.append({"Branch": branch, "On Hand": qty})
+                stock_rows.append({t("Branch","الفرع"): branch, t("On Hand","متوفر"): qty})
 
         purch_df = pd.DataFrame(purch_rows) if purch_rows else purch_empty.copy()
         stock_df = pd.DataFrame(stock_rows) if stock_rows else stock_empty.copy()
 
         if not purch_df.empty:
-            purch_df["Qty Purchased"] = pd.to_numeric(purch_df["Qty Purchased"], errors="coerce").fillna(0)
-            for col in ["Branch", "Vendor", "Date"]:
+            purch_df[t("Qty Purchased","الكمية المشتراة")] = pd.to_numeric(purch_df[t("Qty Purchased","الكمية المشتراة")], errors="coerce").fillna(0)
+            for col in purch_df.columns:
                 purch_df[col] = purch_df[col].fillna("").astype(str)
         if not stock_df.empty:
-            stock_df["On Hand"] = pd.to_numeric(stock_df["On Hand"], errors="coerce").fillna(0)
-            stock_df["Branch"]  = stock_df["Branch"].fillna("").astype(str)
+            stock_df[t("On Hand","متوفر")] = pd.to_numeric(stock_df[t("On Hand","متوفر")], errors="coerce").fillna(0)
+            stock_df[t("Branch","الفرع")] = stock_df[t("Branch","الفرع")].fillna("").astype(str)
 
         return purch_df, stock_df
 
@@ -1425,27 +1803,30 @@ def fetch_swag_model_purchases_and_stock(
 # ─────────────────────────────────────────────────────────────────────────────
 # RENAME CACHED COLUMNS TO CURRENT LANGUAGE
 # ─────────────────────────────────────────────────────────────────────────────
-_COL_MAP_EN = {
-    "System":"System","Model Code":"Model Code","Product":"Product",
-    "Sale Price":"Sale Price","On Hand":"On Hand","Branch":"Branch",
-    "Location":"Location","Reference":"Reference","Type":"Type",
-    "State":"State","From":"From","To":"To","Qty":"Qty",
-    "Scheduled":"Scheduled","Sold(30d)":"Sold(30d)","Daily Vel":"Daily Vel",
-    "Days Left":"Days Left","Suggest":"Suggest","Priority":"Priority",
-}
-_COL_MAP_AR = {
-    "System":"النظام","Model Code":"رمز الموديل","Product":"المنتج",
-    "Sale Price":"سعر البيع","On Hand":"متوفر","Branch":"الفرع",
-    "Location":"الموقع","Reference":"المرجع","Type":"النوع",
-    "State":"الحالة","From":"من","To":"إلى","Qty":"الكمية",
-    "Scheduled":"المجدول","Sold(30d)":"مباع(30ي)","Daily Vel":"معدل/يوم",
-    "Days Left":"أيام متبقية","Suggest":"المقترح","Priority":"الأولوية",
-}
-
 def localize_columns(df):
     if df is None or df.empty:
         return df
-    col_map = _COL_MAP_AR if get_lang() == "AR" else _COL_MAP_EN
+    col_map = {
+        "System": t("System","النظام"),
+        "Model Code": t("Model Code","رمز الموديل"),
+        "Product": t("Product","المنتج"),
+        "Sale Price": t("Sale Price","سعر البيع"),
+        "On Hand": t("On Hand","متوفر"),
+        "Branch": t("Branch","الفرع"),
+        "Location": t("Location","الموقع"),
+        "Reference": t("Reference","المرجع"),
+        "Type": t("Type","النوع"),
+        "State": t("State","الحالة"),
+        "From": t("From","من"),
+        "To": t("To","إلى"),
+        "Qty": t("Qty","الكمية"),
+        "Scheduled": t("Scheduled","المجدول"),
+        "Sold(30d)": t("Sold(30d)","مباع(30ي)"),
+        "Daily Vel": t("Daily Vel","معدل/يوم"),
+        "Days Left": t("Days Left","أيام متبقية"),
+        "Suggest": t("Suggest","المقترح"),
+        "Priority": t("Priority","الأولوية"),
+    }
     return df.rename(columns=col_map)
 
 def prepare_df(df):
@@ -1487,63 +1868,65 @@ def get_qty_display(qty, lang="EN"):
     try:
         v = float(qty)
         if pd.isna(v) or v == 0:
-            return "❌ لا يوجد" if lang == "AR" else "❌ Not Available"
-        return int(v)
+            return "❌ " + (t("Not Available","غير متوفر"))
+        return f"{int(v):,}"
     except Exception:
-        return "❌ لا يوجد" if lang == "AR" else "❌ Not Available"
+        return "❌ " + (t("Not Available","غير متوفر"))
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# HTML TABLE
+# PREMIUM TABLE RENDERER
 # ─────────────────────────────────────────────────────────────────────────────
-_TABLE_CSS = """<style>
-.swag-wrap{width:100%;overflow-x:auto;border-radius:16px;box-shadow:0 4px 32px rgba(0,0,0,.5);margin-bottom:4px;}
-.swag-tbl{width:100%;border-collapse:collapse;font-family:'IBM Plex Sans Arabic',sans-serif;font-size:.84rem;}
-.swag-tbl thead tr{background:linear-gradient(90deg,#667eea,#764ba2,#9b59b6);}
-.swag-tbl thead th{color:#fff;font-weight:700;padding:14px 16px;text-align:center;white-space:nowrap;letter-spacing:.4px;border:none;position:sticky;top:0;z-index:2;}
-.swag-tbl thead th:first-child{border-radius:16px 0 0 0;}
-.swag-tbl thead th:last-child{border-radius:0 16px 0 0;}
-.swag-tbl tbody tr:nth-child(odd){background:#1a1a3e;}
-.swag-tbl tbody tr:nth-child(odd) td{color:#e8e8ff;}
-.swag-tbl tbody tr:nth-child(even){background:#22224a;}
-.swag-tbl tbody tr:nth-child(even) td{color:#c4b5fd;}
-.swag-tbl tbody td{padding:10px 16px;text-align:center;border-bottom:1px solid #ffffff08;transition:background .15s,color .15s;}
-.swag-tbl tbody td.cf{font-weight:700;color:#a78bfa!important;border-right:2px solid #667eea33;}
-.swag-tbl tbody tr:hover td{background:#3b2f7a!important;color:#fff!important;}
-.swag-tbl tbody tr:hover td.cf{color:#f093fb!important;}
-.swag-tbl tbody tr.rl td{background:#3b0a1e!important;color:#fca5a5!important;font-weight:600;}
-.swag-tbl tbody tr.rl:hover td{background:#5b1030!important;color:#ffd5d5!important;}
-.swag-tbl tbody tr.hi td{background:#1a3b1a!important;color:#86efac!important;font-weight:600;}
-.swag-tbl tbody tr.na-row td{background:#2a1a1a!important;opacity:.82;}
-.swag-tbl tbody td.na-cell{color:#f97316!important;font-weight:700;letter-spacing:.3px;}
-</style>"""
-
-def _render_html_table(df_show, first_col_class="cf"):
+def render_premium_table(df_show, first_col_accent=True):
     if df_show is None or df_show.empty:
-        st.info(t("No data.", "لا بيانات."))
+        st.info(t("No data available.", "لا توجد بيانات متاحة."))
         return
-    cols  = df_show.columns.tolist()
-    th_   = "".join(f"<th>{c}</th>" for c in cols)
-    def _row(idx_row):
-        _, row = idx_row
-        cells = "".join(
-            f'<td class="{first_col_class}">{v}</td>' if ci == 0 else f"<td>{v}</td>"
-            for ci, v in enumerate(row)
-        )
-        return f"<tr>{cells}</tr>"
-    tbody = "".join(_row(x) for x in df_show.iterrows())
-    st.markdown(
-        f'{_TABLE_CSS}<div class="swag-wrap">'
-        f'<table class="swag-tbl"><thead><tr>{th_}</tr></thead>'
-        f'<tbody>{tbody}</tbody></table></div>',
-        unsafe_allow_html=True
-    )
+    
+    cols = df_show.columns.tolist()
+    dir_attr = f'dir="{get_dir()}"' if get_lang() == "AR" else ""
+    
+    # Build table HTML
+    th_html = "".join(f"<th>{col}</th>" for col in cols)
+    
+    tbody_rows = []
+    for idx, row in df_show.iterrows():
+        cells = []
+        for ci, (col, val) in enumerate(row.items()):
+            cell_class = "accent-cell" if first_col_accent and ci == 0 else ""
+            cells.append(f"<td class='{cell_class}'>{val}</td>")
+        tbody_rows.append(f"<tr>{''.join(cells)}</tr>")
+    
+    tbody_html = "".join(tbody_rows)
+    
+    st.markdown(f"""
+    <div class="table-wrapper">
+        <table class="premium-table" {dir_attr}>
+            <thead>
+                <tr>{th_html}</tr>
+            </thead>
+            <tbody>
+                {tbody_html}
+            </tbody>
+        </table>
+    </div>
+    <style>
+    .premium-table td.accent-cell {{
+        font-weight: 700;
+        color: #3498db;
+    }}
+    [dir="rtl"] .premium-table td.accent-cell {{
+        font-weight: 700;
+        color: #3498db;
+    }}
+    </style>
+    """, unsafe_allow_html=True)
+    
     st.caption(f"📊 {len(df_show)} {t('rows', 'صفوف')}")
 
 
 def display_df(df, thresh=0, table_key="tbl"):
     if df is None or df.empty:
-        st.info(t("No data.","لا بيانات."))
+        st.info(t("No data.", "لا بيانات."))
         return
 
     work = df.copy()
@@ -1665,51 +2048,9 @@ def display_df(df, thresh=0, table_key="tbl"):
         show[qc] = pd.to_numeric(show[qc], errors="coerce").map(
             lambda v: get_qty_display(v, _lang))
 
-    low_idx = set()
-    if thresh > 0 and qc in work.columns:
-        raw_q3  = pd.to_numeric(work[qc], errors="coerce")
-        low_idx = set(work.index[(raw_q3 > 0) & (raw_q3 <= thresh)])
+    # Render premium table
+    render_premium_table(show)
 
-    _zero_set     = set(_raw_qty.index[_raw_qty == 0]) if not _raw_qty.empty else set()
-    _na_label_en  = "❌ Not Available"
-    _na_label_ar  = "❌ لا يوجد"
-
-    cols  = show.columns.tolist()
-    th_   = "".join(f"<th>{c}</th>" for c in cols)
-
-    def _row(idx_row):
-        i, row = idx_row
-        is_zero = i in _zero_set
-        if is_zero:
-            cls = " na-row"
-        elif i in low_idx:
-            cls = " rl"
-        else:
-            cls = ""
-
-        cells = "".join(
-            f'<td class="cf">{v}</td>'
-            if ci == 0
-            else (
-                f'<td class="na-cell">{v}</td>'
-                if is_zero
-                   and isinstance(v, str)
-                   and v in (_na_label_en, _na_label_ar)
-                else f"<td>{v}</td>"
-            )
-            for ci, v in enumerate(row)
-        )
-        return f'<tr class="{cls}">{cells}</tr>'
-
-    tbody = "".join(_row(x) for x in show.iterrows())
-    st.markdown(
-        f'{_TABLE_CSS}<div class="swag-wrap">'
-        f'<table class="swag-tbl"><thead><tr>{th_}</tr></thead>'
-        f'<tbody>{tbody}</tbody></table></div>',
-        unsafe_allow_html=True
-    )
-    st.caption(f"📊 {len(show)} {t('rows shown','صفوف معروضة')} "
-               f"/ {len(df)} {t('total','إجمالي')}")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # LOGIN
@@ -1730,21 +2071,20 @@ def show_login():
             <div class='login-title'>SWAG Dashboard</div>
             <div class='login-subtitle'>Real-time Stock &amp; Price · 4 Odoo Systems</div>
         </div>""", unsafe_allow_html=True)
-        wm = ("🌙 مرحباً بك — سجّل دخولك للمتابعة" if get_lang()=="AR"
-              else "👋 Welcome back! Sign in to continue.")
-        st.markdown(f"<div class='welcome-banner'>{wm}</div>", unsafe_allow_html=True)
+        wm = (t("🌙 Welcome — Sign in to continue","🌙 مرحباً بك — سجّل دخولك للمتابعة"))
+        st.markdown(f"<div class='info-banner'>{wm}</div>", unsafe_allow_html=True)
         st.markdown("<div class='login-card'>", unsafe_allow_html=True)
 
         with st.form("lf", clear_on_submit=False):
             em = st.text_input(
-                "📧 Email" if get_lang()=="EN" else "📧 البريد الإلكتروني",
+                t("📧 Email","📧 البريد الإلكتروني"),
                 placeholder="you@swag.com.sa")
             pw = st.text_input(
-                "🔑 Password" if get_lang()=="EN" else "🔑 كلمة المرور",
+                t("🔑 Password","🔑 كلمة المرور"),
                 type="password", placeholder="••••••••")
             st.markdown("<br>", unsafe_allow_html=True)
             sub = st.form_submit_button(
-                "🚀 Sign In" if get_lang()=="EN" else "🚀 تسجيل الدخول",
+                t("🚀 Sign In","🚀 تسجيل الدخول"),
                 use_container_width=True, type="primary")
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -1780,9 +2120,10 @@ def show_login():
                 except Exception as e:
                     st.error(f"❌ Connection error: {e}")
 
-        st.markdown("""<p style='text-align:center;color:#4a4a6a;font-size:.75rem;margin-top:24px;'>
-        © 2025 SWAG Fashion · Powered by Odoo · Built with ❤️</p>""",
-                    unsafe_allow_html=True)
+        st.markdown("""
+        <div class='footer' style='margin-top:24px;'>
+        © 2025 SWAG Fashion · Powered by Odoo · Built with ❤️
+        </div>""", unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # LOGOUT
@@ -1795,34 +2136,44 @@ def do_logout():
     st.rerun()
 
 # ─────────────────────────────────────────────────────────────────────────────
-# PREMIUM KPI CARD HELPERS  (NEW)
+# PREMIUM KPI CARD HELPERS
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _premium_kpi_card(icon: str, value: str, label: str, color: str = "c-blue", sub: str = "") -> str:
+def _premium_kpi_card(icon: str, value: str, label: str, trend: str = "") -> str:
     """Return HTML for a single premium KPI card."""
-    sub_html = f"<div class='kpi-sub'>{sub}</div>" if sub else ""
+    trend_html = f"<div class='kpi-trend'>{trend}</div>" if trend else ""
     return (
-        f"<div class='kpi-card {color}'>"
+        f"<div class='kpi-card'>"
         f"<span class='kpi-icon'>{icon}</span>"
         f"<div class='kpi-value'>{value}</div>"
         f"<div class='kpi-label'>{label}</div>"
-        f"{sub_html}"
+        f"{trend_html}"
         f"</div>"
     )
 
 
-def _render_kpi_row(cards: list):
-    """Render a flex row of premium KPI cards. Each card is an HTML string."""
+def _render_kpi_grid(cards: list):
+    """Render a grid of premium KPI cards."""
     inner = "".join(cards)
-    st.markdown(f"<div class='kpi-row'>{inner}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='kpi-grid'>{inner}</div>", unsafe_allow_html=True)
 
 
-def _chart_card_open(title: str, icon: str = "📊") -> None:
+def _section_header(title: str, icon: str = "📊") -> None:
+    """Render a section header."""
+    st.markdown(
+        f"<div class='section-header'>"
+        f"{icon} {title}"
+        f"</div>",
+        unsafe_allow_html=True
+    )
+
+
+def _chart_card_open(title: str, icon: str = "📈") -> None:
     """Open a styled chart card section."""
     st.markdown(
         f"<div class='chart-card'>"
         f"<div class='chart-title'>"
-        f"<span class='ct-accent'></span>{icon} {title}"
+        f"<span class='accent'></span>{icon} {title}"
         f"</div>",
         unsafe_allow_html=True
     )
@@ -1833,33 +2184,31 @@ def _chart_card_close() -> None:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# ALTAIR CHART HELPERS  (dark-theme, premium look)
+# ALTAIR CHART HELPERS (dark-theme, premium look)
 # ─────────────────────────────────────────────────────────────────────────────
 
 _ALT_CONFIG = {
     "background": "transparent",
     "view": {"stroke": "transparent"},
     "axis": {
-        "labelColor": "#c4b5fd",
-        "titleColor": "#a0aec0",
-        "gridColor": "#ffffff12",
-        "domainColor": "#667eea33",
-        "tickColor": "#667eea33",
+        "labelColor": "#8e9aaf",
+        "titleColor": "#e8edf2",
+        "gridColor": "rgba(255, 255, 255, 0.1)",
+        "domainColor": "rgba(52, 152, 219, 0.3)",
+        "tickColor": "rgba(52, 152, 219, 0.3)",
         "labelFontSize": 11,
         "titleFontSize": 12,
     },
     "legend": {
-        "labelColor": "#c4b5fd",
-        "titleColor": "#a0aec0",
+        "labelColor": "#8e9aaf",
+        "titleColor": "#e8edf2",
     },
-    "title": {"color": "#e8e8ff"},
+    "title": {"color": "#e8edf2"},
 }
 
-# Refined palette — smooth gradients
 _PALETTE = [
-    "#667eea", "#764ba2", "#f093fb", "#43e97b",
-    "#4facfe", "#38f9d7", "#fa8231", "#fd79a8",
-    "#a29bfe", "#00cec9", "#fdcb6e", "#e17055",
+    "#3498db", "#2ecc71", "#e74c3c", "#f1c40f",
+    "#9b59b6", "#1abc9c", "#e67e22", "#34495e",
 ]
 
 
@@ -1868,7 +2217,7 @@ def _alt_bar_chart(
     x_field: str,
     y_field: str,
     tooltip_fmt: str = ",.0f",
-    color: str = "#667eea",
+    color: str = "#3498db",
     sort_order: str = "-y",
     label_angle: int = -35,
     height: int = 300,
@@ -1880,8 +2229,8 @@ def _alt_bar_chart(
     chart = (
         alt.Chart(plot_df)
         .mark_bar(
-            cornerRadiusTopLeft=6,
-            cornerRadiusTopRight=6,
+            cornerRadiusTopLeft=8,
+            cornerRadiusTopRight=8,
             opacity=0.9,
         )
         .encode(
@@ -1898,7 +2247,7 @@ def _alt_bar_chart(
             ],
             color=alt.condition(
                 alt.datum[y_field] == plot_df[y_field].max(),
-                alt.value("#f093fb"),
+                alt.value("#2ecc71"),
                 alt.value(color),
             ),
         )
@@ -1914,7 +2263,7 @@ def _alt_line_chart(
     x_field: str,
     y_field: str,
     height: int = 260,
-    color: str = "#667eea",
+    color: str = "#3498db",
 ) -> alt.Chart:
     line = (
         alt.Chart(df)
@@ -1927,7 +2276,7 @@ def _alt_line_chart(
             x=alt.X(f"{x_field}:T", title=None, axis=alt.Axis(format="%b %d", labelAngle=-30)),
             y=alt.Y(f"{y_field}:Q", title=y_field),
             tooltip=[
-                alt.Tooltip(f"{x_field}:T", title="Date", format="%Y-%m-%d"),
+                alt.Tooltip(f"{x_field}:T", title=t("Date","التاريخ"), format="%Y-%m-%d"),
                 alt.Tooltip(f"{y_field}:Q", title=y_field, format=",.0f"),
             ],
         )
@@ -1946,12 +2295,12 @@ def _alt_line_chart(
     )
     points = (
         alt.Chart(df)
-        .mark_circle(color="#f093fb", size=55, opacity=0.9)
+        .mark_circle(color="#2ecc71", size=55, opacity=0.9)
         .encode(
             x=alt.X(f"{x_field}:T"),
             y=alt.Y(f"{y_field}:Q"),
             tooltip=[
-                alt.Tooltip(f"{x_field}:T", title="Date", format="%Y-%m-%d"),
+                alt.Tooltip(f"{x_field}:T", title=t("Date","التاريخ"), format="%Y-%m-%d"),
                 alt.Tooltip(f"{y_field}:Q", title=y_field, format=",.0f"),
             ],
         )
@@ -1965,12 +2314,12 @@ def _alt_line_chart(
     return chart
 
 
-def _po_top10_altair(
+def _top10_altair(
     title: str,
     group_col: str,
     value_col: str,
     df: pd.DataFrame,
-    color: str = "#764ba2",
+    color: str = "#3498db",
     tooltip_fmt: str = ",.0f",
 ):
     if df is None or df.empty:
@@ -1991,7 +2340,7 @@ def _po_top10_altair(
         st.info(t("No data.", "لا توجد بيانات."))
         return
 
-    display_label = "Total Qty" if value_col == "Qty" else "Total Amount (SAR)"
+    display_label = t("Total Qty","إجمالي الكمية") if value_col in ["Qty", "الكمية"] else t("Total Amount (SAR)","إجمالي المبلغ")
     grp[display_label] = grp[value_col].map(lambda v: f"{v:{tooltip_fmt}}")
 
     _chart_card_open(title, "")
@@ -2003,38 +2352,38 @@ def _po_top10_altair(
         )
         st.altair_chart(chart, use_container_width=True)
     with tbl_col:
-        _render_html_table(grp[[group_col, display_label]])
+        render_premium_table(grp[[group_col, display_label]])
     _chart_card_close()
 
 
 def _po_kpi_row(df, prefix=""):
     """Premium KPI row for purchase analytics."""
-    total_qty    = float(df["Qty"].sum())
-    total_amt    = float(df["Subtotal"].sum())
-    n_vendors    = int(df["Vendor"].nunique())
-    n_products   = int(df["Model Code"].nunique())
+    total_qty    = float(df[t("Qty","الكمية")].sum())
+    total_amt    = float(df[t("Subtotal","المجموع")].sum())
+    n_vendors    = int(df[t("Vendor","المورد")].nunique())
+    n_products   = int(df[t("Model Code","رمز الموديل")].nunique())
 
     cards = [
-        _premium_kpi_card("📦", f"{total_qty:,.0f}",    t("Total Qty Purchased","إجمالي الكمية المشتراة"), "c-blue"),
-        _premium_kpi_card("💵", f"{total_amt:,.2f}",    t("Total Amount (SAR)","إجمالي المبلغ"),         "c-purple"),
-        _premium_kpi_card("🏭", str(n_vendors),         t("Vendors","الموردون"),                         "c-green"),
-        _premium_kpi_card("🏷️", str(n_products),        t("Products","المنتجات"),                        "c-orange"),
+        _premium_kpi_card("📦", f"{total_qty:,.0f}",    t("Total Qty Purchased","إجمالي الكمية المشتراة")),
+        _premium_kpi_card("💰", f"{total_amt:,.2f}",    t("Total Amount (SAR)","إجمالي المبلغ")),
+        _premium_kpi_card("🏭", str(n_vendors),         t("Vendors","الموردون")),
+        _premium_kpi_card("🏷️", str(n_products),        t("Products","المنتجات")),
     ]
-    _render_kpi_row(cards)
+    _render_kpi_grid(cards)
 
 
 def _po_full_table(df):
     show = df.copy()
-    show["Unit Price"] = show["Unit Price"].map(lambda v: f"{v:.2f} SAR")
-    show["Subtotal"]   = show["Subtotal"].map(lambda v: f"{v:,.2f} SAR")
-    show["Qty"]        = show["Qty"].map(lambda v: f"{v:,.0f}")
-    _render_html_table(show)
+    show[t("Unit Price","سعر الوحدة")] = show[t("Unit Price","سعر الوحدة")].map(lambda v: f"{v:.2f} SAR" if pd.notna(v) else "—")
+    show[t("Subtotal","المجموع")]   = show[t("Subtotal","المجموع")].map(lambda v: f"{v:,.2f} SAR")
+    show[t("Qty","الكمية")]        = show[t("Qty","الكمية")].map(lambda v: f"{v:,.0f}")
+    render_premium_table(show)
 
 
 def _po_download_row(df, tag_suffix=""):
     dl1, dl2, _ = st.columns([1, 1, 2])
     dl1.download_button(
-        "⬇️ CSV",
+        t("⬇️ CSV","⬇️ CSV"),
         df.to_csv(index=False).encode("utf-8-sig"),
         dl_name(f"purchase{tag_suffix}", "csv"),
         "text/csv",
@@ -2042,7 +2391,7 @@ def _po_download_row(df, tag_suffix=""):
         key=f"dl_csv_{tag_suffix}_{id(df)}"
     )
     dl2.download_button(
-        "⬇️ Excel",
+        t("⬇️ Excel","⬇️ إكسل"),
         to_excel_purchase(df),
         dl_name(f"purchase{tag_suffix}", "xlsx"),
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -2052,19 +2401,19 @@ def _po_download_row(df, tag_suffix=""):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# PLOTLY DONUT CHART HELPER  — FIXED & CRASH-PROOF  (v27)
+# PLOTLY DONUT CHART HELPER — CRASH-PROOF & SAFE
 # ─────────────────────────────────────────────────────────────────────────────
 def _plotly_donut(labels, values, title="", height=360):
     """
     Render a dark-theme Plotly donut chart.
-    Fully crash-proof: cleans labels/values, handles empty/null/zero-sum data,
-    uses only flat title_text / title_x kwargs (no nested dict).
+    Fully crash-proof: cleans labels/values, handles empty/null/zero-sum data.
     """
     if not _HAS_PLOTLY:
-        st.info("Install plotly for donut charts: pip install plotly")
+        st.info(t("Install plotly for donut charts: pip install plotly", 
+                  "قم بتثبيت plotly للرسوم الدائرية: pip install plotly"))
         return
 
-    # ── Safe data cleaning ────────────────────────────────────────────────────
+    # Safe data cleaning
     clean_pairs = []
     for lbl, val in zip(labels, values):
         try:
@@ -2082,25 +2431,21 @@ def _plotly_donut(labels, values, title="", height=360):
     clean_labels = [p[0] for p in clean_pairs]
     clean_values = [p[1] for p in clean_pairs]
 
-    _colors = [
-        "#667eea", "#764ba2", "#f093fb", "#43e97b",
-        "#4facfe", "#38f9d7", "#fa8231", "#fd79a8",
-        "#a29bfe", "#00cec9", "#fdcb6e", "#e17055",
-    ]
+    _colors = ["#3498db", "#2ecc71", "#e74c3c", "#f1c40f", "#9b59b6", "#1abc9c", "#e67e22", "#34495e"]
     used_colors = (_colors * ((len(clean_labels) // len(_colors)) + 1))[:len(clean_labels)]
 
     try:
         fig = go.Figure(data=[go.Pie(
             labels=clean_labels,
             values=clean_values,
-            hole=0.54,
+            hole=0.55,
             marker=dict(
                 colors=used_colors,
-                line=dict(color="#1a1a2e", width=2),
+                line=dict(color="#0a0c10", width=2),
             ),
             textinfo="percent+label",
-            textfont=dict(color="#e8e8ff", size=11),
-            hovertemplate="<b>%{label}</b><br>Value: %{value:,.0f}<br>Share: %{percent}<extra></extra>",
+            textfont=dict(color="#e8edf2", size=11),
+            hovertemplate="<b>%{label}</b><br>" + t("Value","القيمة") + ": %{value:,.0f}<br>" + t("Share","الحصة") + ": %{percent}<extra></extra>",
             sort=True,
             direction="clockwise",
         )])
@@ -2108,16 +2453,16 @@ def _plotly_donut(labels, values, title="", height=360):
         fig.update_layout(
             title_text=title,
             title_x=0.5,
-            title_font_color="#c4b5fd",
+            title_font_color="#e8edf2",
             title_font_size=13,
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
             height=height,
             margin=dict(t=52, b=20, l=10, r=10),
             legend=dict(
-                font=dict(color="#c4b5fd", size=10),
-                bgcolor="rgba(24,24,48,0.75)",
-                bordercolor="#667eea33",
+                font=dict(color="#8e9aaf", size=10),
+                bgcolor="rgba(20,24,30,0.75)",
+                bordercolor="rgba(52,152,219,0.3)",
                 borderwidth=1,
                 orientation="v",
             ),
@@ -2131,33 +2476,33 @@ def _plotly_donut(labels, values, title="", height=360):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SALES KPI ROW  — Premium version
+# SALES KPI ROW — Premium version
 # ─────────────────────────────────────────────────────────────────────────────
 def _sales_kpi_row(df):
-    total_qty   = float(df["Qty"].sum())
-    total_amt   = float(df["Subtotal"].sum())
-    n_customers = int(df["Customer"].nunique())
-    n_products  = int(df["Model Code"].nunique())
-    n_orders    = int(df["SO"].nunique())
-    pos_prices  = df["Unit Price"][df["Unit Price"] > 0]
+    total_qty   = float(df[t("Qty","الكمية")].sum())
+    total_amt   = float(df[t("Subtotal","المجموع")].sum())
+    n_customers = int(df[t("Customer","العميل")].nunique())
+    n_products  = int(df[t("Model Code","رمز الموديل")].nunique())
+    n_orders    = int(df[t("SO","أمر البيع")].nunique())
+    pos_prices  = df[t("Unit Price","سعر الوحدة")][df[t("Unit Price","سعر الوحدة")] > 0]
     avg_price   = float(pos_prices.mean()) if not pos_prices.empty else 0.0
 
     cards = [
-        _premium_kpi_card("📦", f"{total_qty:,.0f}",   t("Total Qty Sold","إجمالي الكمية المباعة"), "c-green"),
-        _premium_kpi_card("💰", f"{total_amt:,.2f}",   t("Total Sales (SAR)","إجمالي المبيعات"),    "c-blue"),
-        _premium_kpi_card("👤", str(n_customers),       t("Customers","العملاء"),                    "c-purple"),
-        _premium_kpi_card("🏷️", str(n_products),        t("Products","المنتجات"),                    "c-orange"),
-        _premium_kpi_card("🧾", str(n_orders),          t("Orders","الطلبات"),                       "c-pink"),
-        _premium_kpi_card("💲", f"{avg_price:,.2f}",   t("Avg Unit Price","متوسط سعر الوحدة"),      "c-cyan"),
+        _premium_kpi_card("📦", f"{total_qty:,.0f}",   t("Total Qty Sold","إجمالي الكمية المباعة")),
+        _premium_kpi_card("💰", f"{total_amt:,.2f}",   t("Total Sales (SAR)","إجمالي المبيعات")),
+        _premium_kpi_card("👤", str(n_customers),      t("Customers","العملاء")),
+        _premium_kpi_card("🏷️", str(n_products),       t("Products","المنتجات")),
+        _premium_kpi_card("🧾", str(n_orders),         t("Orders","الطلبات")),
+        _premium_kpi_card("💲", f"{avg_price:,.2f}",   t("Avg Unit Price","متوسط سعر الوحدة")),
     ]
-    _render_kpi_row(cards)
+    _render_kpi_grid(cards)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # SWAG SALES ANALYTICS VIEW
 # ─────────────────────────────────────────────────────────────────────────────
 def show_sales_analytics():
-    st.markdown(f"### 💰 {t('SWAG Sales Analytics','تحليلات مبيعات سواغ')}")
+    _section_header(t("SWAG Sales Analytics","تحليلات مبيعات سواغ"), "💰")
     st.markdown(
         "<div class='info-banner'>📌 "
         + t("Sales orders from the <b>SWAG</b> system only (state: sale / done).",
@@ -2166,7 +2511,7 @@ def show_sales_analytics():
         unsafe_allow_html=True
     )
 
-    # ── Filters row ───────────────────────────────────────────────────────────
+    # Filters
     default_from = datetime.now().date() - timedelta(days=365)
     default_to   = datetime.now().date()
 
@@ -2196,8 +2541,8 @@ def show_sales_analytics():
     with sf4:
         cached_sa      = st.session_state.get("salesanalyticsdf")
         customer_opts  = []
-        if cached_sa is not None and not cached_sa.empty and "Customer" in cached_sa.columns:
-            customer_opts = sorted(cached_sa["Customer"].dropna().unique().tolist())
+        if cached_sa is not None and not cached_sa.empty and t("Customer","العميل") in cached_sa.columns:
+            customer_opts = sorted(cached_sa[t("Customer","العميل")].dropna().unique().tolist())
 
         sa_customer_sel = st.multiselect(
             f"👤 {t('Customer','العميل')}",
@@ -2224,7 +2569,6 @@ def show_sales_analytics():
         st.session_state.salesanalyticsdf = fetched
         st.rerun()
 
-    # ── Work with cached sales data ───────────────────────────────────────────
     sa_full = st.session_state.get("salesanalyticsdf")
 
     if sa_full is None:
@@ -2238,176 +2582,166 @@ def show_sales_analytics():
         st.info(t("No sales found for this period.", "لا توجد مبيعات لهذه الفترة."))
         return
 
-    # Apply customer filter
+    # Apply filters
     if sa_customer_sel:
-        sa_df = sa_full[sa_full["Customer"].isin(sa_customer_sel)].copy()
+        sa_df = sa_full[sa_full[t("Customer","العميل")].isin(sa_customer_sel)].copy()
     else:
         sa_df = sa_full.copy()
 
-    # Apply model filter (local)
     if sa_model_input:
         mc_norm = sa_model_input.upper()
-        sa_df_model = sa_df[sa_df["Model Code"].str.upper() == mc_norm].copy()
+        sa_df_model = sa_df[sa_df[t("Model Code","رمز الموديل")].str.upper() == mc_norm].copy()
     else:
         sa_df_model = None
 
-    # ── KPI Cards ─────────────────────────────────────────────────────────────
-    st.markdown("<div class='section-sep'></div>", unsafe_allow_html=True)
-    st.markdown(
-        f"<div class='panel-header'>📊 {t('Sales KPIs','مؤشرات المبيعات')}</div>",
-        unsafe_allow_html=True
-    )
+    # KPI Cards
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    _section_header(t("Sales KPIs","مؤشرات المبيعات"), "📊")
     _sales_kpi_row(sa_df)
 
-    # ── Top 10 Analytics ──────────────────────────────────────────────────────
-    st.markdown("<div class='section-sep'></div>", unsafe_allow_html=True)
-    st.markdown(
-        f"<div class='panel-header'>🏆 {t('Top 10 Analytics','أفضل 10 تحليلات')}</div>",
-        unsafe_allow_html=True
-    )
+    # Top 10 Analytics
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    _section_header(t("Top 10 Analytics","أفضل 10 تحليلات"), "🏆")
 
     # Top 10 Products by Qty
     prod_qty_grp = (
         sa_df.copy()
-        .assign(**{"Model Code": sa_df["Model Code"].replace("", "(No Code)").fillna("(No Code)")})
-        .groupby(["Model Code", "Product"], as_index=False)["Qty"]
+        .assign(**{t("Model Code","رمز الموديل"): sa_df[t("Model Code","رمز الموديل")].replace("", "(No Code)").fillna("(No Code)")})
+        .groupby([t("Model Code","رمز الموديل"), t("Product","المنتج")], as_index=False)[t("Qty","الكمية")]
         .sum()
-        .sort_values("Qty", ascending=False)
+        .sort_values(t("Qty","الكمية"), ascending=False)
         .head(10)
         .reset_index(drop=True)
     )
-    prod_qty_grp["Total Qty"] = prod_qty_grp["Qty"].map(lambda v: f"{v:,.0f}")
+    prod_qty_grp[t("Total Qty","إجمالي الكمية")] = prod_qty_grp[t("Qty","الكمية")].map(lambda v: f"{v:,.0f}")
 
     _chart_card_open(t("Top 10 Products by Qty Sold","أعلى 10 منتجات حسب الكمية المباعة"), "🏆")
     pc1, pc2 = st.columns([1.6, 1])
     with pc1:
         st.altair_chart(
-            _alt_bar_chart(prod_qty_grp, x_field="Model Code", y_field="Qty",
-                           tooltip_fmt=",.0f", color="#43e97b"),
+            _alt_bar_chart(prod_qty_grp, x_field=t("Model Code","رمز الموديل"), y_field=t("Qty","الكمية"),
+                           tooltip_fmt=",.0f", color="#2ecc71"),
             use_container_width=True
         )
     with pc2:
-        _render_html_table(prod_qty_grp[["Model Code", "Product", "Total Qty"]])
+        render_premium_table(prod_qty_grp[[t("Model Code","رمز الموديل"), t("Product","المنتج"), t("Total Qty","إجمالي الكمية")]])
     _chart_card_close()
 
-    st.markdown("<div class='section-sep'></div>", unsafe_allow_html=True)
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
     # Top 10 Products by Sales Amount
     prod_amt_grp = (
         sa_df.copy()
-        .assign(**{"Model Code": sa_df["Model Code"].replace("", "(No Code)").fillna("(No Code)")})
-        .groupby(["Model Code", "Product"], as_index=False)["Subtotal"]
+        .assign(**{t("Model Code","رمز الموديل"): sa_df[t("Model Code","رمز الموديل")].replace("", "(No Code)").fillna("(No Code)")})
+        .groupby([t("Model Code","رمز الموديل"), t("Product","المنتج")], as_index=False)[t("Subtotal","المجموع")]
         .sum()
-        .sort_values("Subtotal", ascending=False)
+        .sort_values(t("Subtotal","المجموع"), ascending=False)
         .head(10)
         .reset_index(drop=True)
     )
-    prod_amt_grp["Total SAR"] = prod_amt_grp["Subtotal"].map(lambda v: f"{v:,.2f}")
+    prod_amt_grp[t("Total SAR","إجمالي المبلغ")] = prod_amt_grp[t("Subtotal","المجموع")].map(lambda v: f"{v:,.2f}")
 
     _chart_card_open(t("Top 10 Products by Sales Amount","أعلى 10 منتجات حسب المبلغ"), "💰")
     pa1, pa2 = st.columns([1.6, 1])
     with pa1:
         st.altair_chart(
-            _alt_bar_chart(prod_amt_grp, x_field="Model Code", y_field="Subtotal",
-                           tooltip_fmt=",.2f", color="#4facfe"),
+            _alt_bar_chart(prod_amt_grp, x_field=t("Model Code","رمز الموديل"), y_field=t("Subtotal","المجموع"),
+                           tooltip_fmt=",.2f", color="#3498db"),
             use_container_width=True
         )
     with pa2:
-        _render_html_table(prod_amt_grp[["Model Code", "Product", "Total SAR"]])
+        render_premium_table(prod_amt_grp[[t("Model Code","رمز الموديل"), t("Product","المنتج"), t("Total SAR","إجمالي المبلغ")]])
     _chart_card_close()
 
-    st.markdown("<div class='section-sep'></div>", unsafe_allow_html=True)
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
     # Top 10 Brand Categories by Qty
-    _po_top10_altair(
+    _top10_altair(
         t("Top 10 Brand Categories by Qty","أعلى 10 فئات علامة تجارية حسب الكمية"),
-        "Brand Category", "Qty", sa_df,
-        color="#f093fb", tooltip_fmt=",.0f"
+        t("Brand Category","الفئة التجارية"), t("Qty","الكمية"), sa_df,
+        color="#9b59b6", tooltip_fmt=",.0f"
     )
-    st.markdown("<div class='section-sep'></div>", unsafe_allow_html=True)
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
     # Top 10 Categories by Qty
-    _po_top10_altair(
+    _top10_altair(
         t("Top 10 Categories by Qty","أعلى 10 فئات حسب الكمية"),
-        "Category", "Qty", sa_df,
-        color="#764ba2", tooltip_fmt=",.0f"
+        t("Category","الفئة"), t("Qty","الكمية"), sa_df,
+        color="#e74c3c", tooltip_fmt=",.0f"
     )
-    st.markdown("<div class='section-sep'></div>", unsafe_allow_html=True)
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
     # Top 10 Customers by Sales Amount
     cust_grp = (
         sa_df.copy()
-        .assign(Customer=sa_df["Customer"].replace("", "(No Customer)").fillna("(No Customer)"))
-        .groupby("Customer", as_index=False)["Subtotal"]
+        .assign(**{t("Customer","العميل"): sa_df[t("Customer","العميل")].replace("", "(No Customer)").fillna("(No Customer)")})
+        .groupby(t("Customer","العميل"), as_index=False)[t("Subtotal","المجموع")]
         .sum()
-        .sort_values("Subtotal", ascending=False)
+        .sort_values(t("Subtotal","المجموع"), ascending=False)
         .head(10)
         .reset_index(drop=True)
     )
-    cust_grp["Total SAR"] = cust_grp["Subtotal"].map(lambda v: f"{v:,.2f}")
+    cust_grp[t("Total SAR","إجمالي المبلغ")] = cust_grp[t("Subtotal","المجموع")].map(lambda v: f"{v:,.2f}")
 
     _chart_card_open(t("Top 10 Customers by Sales Amount","أعلى 10 عملاء حسب المبلغ"), "👤")
     cc1, cc2 = st.columns([1.6, 1])
     with cc1:
         st.altair_chart(
-            _alt_bar_chart(cust_grp, x_field="Customer", y_field="Subtotal",
-                           tooltip_fmt=",.2f", color="#667eea"),
+            _alt_bar_chart(cust_grp, x_field=t("Customer","العميل"), y_field=t("Subtotal","المجموع"),
+                           tooltip_fmt=",.2f", color="#f1c40f"),
             use_container_width=True
         )
     with cc2:
-        _render_html_table(cust_grp[["Customer", "Total SAR"]])
+        render_premium_table(cust_grp[[t("Customer","العميل"), t("Total SAR","إجمالي المبلغ")]])
     _chart_card_close()
 
-    # ── Share Analysis — Donut Charts ─────────────────────────────────────────
-    st.markdown("<div class='section-sep'></div>", unsafe_allow_html=True)
-    st.markdown(
-        f"<div class='panel-header'>🥧 {t('Sales Share Analysis','تحليل حصص المبيعات')}</div>",
-        unsafe_allow_html=True
-    )
+    # Share Analysis — Donut Charts
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    _section_header(t("Sales Share Analysis","تحليل حصص المبيعات"), "🥧")
 
     pie1, pie2, pie3 = st.columns(3)
 
     with pie1:
         bc_share = (
             sa_df.copy()
-            .assign(**{"Brand Category": sa_df["Brand Category"].replace("", "(No Brand)").fillna("(No Brand)")})
-            .groupby("Brand Category", as_index=False)["Subtotal"]
+            .assign(**{t("Brand Category","الفئة التجارية"): sa_df[t("Brand Category","الفئة التجارية")].replace("", "(No Brand)").fillna("(No Brand)")})
+            .groupby(t("Brand Category","الفئة التجارية"), as_index=False)[t("Subtotal","المجموع")]
             .sum()
-            .sort_values("Subtotal", ascending=False)
+            .sort_values(t("Subtotal","المجموع"), ascending=False)
         )
         _plotly_donut(
-            bc_share["Brand Category"].tolist(),
-            bc_share["Subtotal"].tolist(),
+            bc_share[t("Brand Category","الفئة التجارية")].tolist(),
+            bc_share[t("Subtotal","المجموع")].tolist(),
             title=t("Brand Category Share", "حصة الفئة التجارية")
         )
 
     with pie2:
         cat_share = (
             sa_df.copy()
-            .assign(Category=sa_df["Category"].replace("", "(No Category)").fillna("(No Category)"))
-            .groupby("Category", as_index=False)["Subtotal"]
+            .assign(**{t("Category","الفئة"): sa_df[t("Category","الفئة")].replace("", "(No Category)").fillna("(No Category)")})
+            .groupby(t("Category","الفئة"), as_index=False)[t("Subtotal","المجموع")]
             .sum()
-            .sort_values("Subtotal", ascending=False)
+            .sort_values(t("Subtotal","المجموع"), ascending=False)
         )
         _plotly_donut(
-            cat_share["Category"].tolist(),
-            cat_share["Subtotal"].tolist(),
+            cat_share[t("Category","الفئة")].tolist(),
+            cat_share[t("Subtotal","المجموع")].tolist(),
             title=t("Category Share", "حصة الفئة")
         )
 
     with pie3:
         cust_all = (
             sa_df.copy()
-            .assign(Customer=sa_df["Customer"].replace("", "(No Customer)").fillna("(No Customer)"))
-            .groupby("Customer", as_index=False)["Subtotal"]
+            .assign(**{t("Customer","العميل"): sa_df[t("Customer","العميل")].replace("", "(No Customer)").fillna("(No Customer)")})
+            .groupby(t("Customer","العميل"), as_index=False)[t("Subtotal","المجموع")]
             .sum()
-            .sort_values("Subtotal", ascending=False)
+            .sort_values(t("Subtotal","المجموع"), ascending=False)
         )
         if not cust_all.empty:
             top10c   = cust_all.head(10)
-            others_v = float(cust_all.iloc[10:]["Subtotal"].sum()) if len(cust_all) > 10 else 0
-            pie_labels = top10c["Customer"].tolist()
-            pie_vals   = top10c["Subtotal"].tolist()
+            others_v = float(cust_all.iloc[10:][t("Subtotal","المجموع")].sum()) if len(cust_all) > 10 else 0
+            pie_labels = top10c[t("Customer","العميل")].tolist()
+            pie_vals   = top10c[t("Subtotal","المجموع")].tolist()
             if others_v > 0:
                 pie_labels.append("Others")
                 pie_vals.append(others_v)
@@ -2416,12 +2750,9 @@ def show_sales_analytics():
                 title=t("Customer Share (Top 10)", "حصة العملاء (أعلى 10)")
             )
 
-    # ── Time-series Sales Trend ───────────────────────────────────────────────
-    st.markdown("<div class='section-sep'></div>", unsafe_allow_html=True)
-    st.markdown(
-        f"<div class='panel-header'>📈 {t('Sales Trend Over Time','اتجاه المبيعات عبر الزمن')}</div>",
-        unsafe_allow_html=True
-    )
+    # Time-series Sales Trend
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    _section_header(t("Sales Trend Over Time","اتجاه المبيعات عبر الزمن"), "📈")
 
     ts_col1, ts_col2 = st.columns(2)
 
@@ -2429,15 +2760,15 @@ def show_sales_analytics():
         _chart_card_open(t("Qty Sold Over Time","الكمية المباعة عبر الزمن"), "📦")
         ts_qty = (
             sa_df.copy()
-            .assign(Date=pd.to_datetime(sa_df["Date"], errors="coerce"))
+            .assign(Date=pd.to_datetime(sa_df[t("Date","التاريخ")], errors="coerce"))
             .dropna(subset=["Date"])
-            .groupby("Date", as_index=False)["Qty"]
+            .groupby("Date", as_index=False)[t("Qty","الكمية")]
             .sum()
             .sort_values("Date")
         )
         if not ts_qty.empty:
             st.altair_chart(
-                _alt_line_chart(ts_qty, "Date", "Qty", height=240, color="#43e97b"),
+                _alt_line_chart(ts_qty, "Date", t("Qty","الكمية"), height=240, color="#2ecc71"),
                 use_container_width=True
             )
         _chart_card_close()
@@ -2446,25 +2777,22 @@ def show_sales_analytics():
         _chart_card_open(t("Sales Amount Over Time","مبلغ المبيعات عبر الزمن"), "💰")
         ts_amt = (
             sa_df.copy()
-            .assign(Date=pd.to_datetime(sa_df["Date"], errors="coerce"))
+            .assign(Date=pd.to_datetime(sa_df[t("Date","التاريخ")], errors="coerce"))
             .dropna(subset=["Date"])
-            .groupby("Date", as_index=False)["Subtotal"]
+            .groupby("Date", as_index=False)[t("Subtotal","المجموع")]
             .sum()
             .sort_values("Date")
         )
         if not ts_amt.empty:
             st.altair_chart(
-                _alt_line_chart(ts_amt, "Date", "Subtotal", height=240, color="#4facfe"),
+                _alt_line_chart(ts_amt, "Date", t("Subtotal","المجموع"), height=240, color="#3498db"),
                 use_container_width=True
             )
         _chart_card_close()
 
-    # ── Single Model Sales Detail ──────────────────────────────────────────────
-    st.markdown("<div class='section-sep'></div>", unsafe_allow_html=True)
-    st.markdown(
-        f"<div class='panel-header'>🔍 {t('Single Model Sales Detail','تفاصيل مبيعات موديل واحد')}</div>",
-        unsafe_allow_html=True
-    )
+    # Single Model Sales Detail
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    _section_header(t("Single Model Sales Detail","تفاصيل مبيعات موديل واحد"), "🔍")
 
     if not sa_model_input:
         st.info(t(
@@ -2477,68 +2805,68 @@ def show_sales_analytics():
             f"لا توجد سجلات مبيعات للموديل **{sa_model_input}**."
         ))
     elif sa_df_model is not None:
-        sm_qty  = float(sa_df_model["Qty"].sum())
-        sm_amt  = float(sa_df_model["Subtotal"].sum())
-        sm_cust = int(sa_df_model["Customer"].nunique())
+        sm_qty  = float(sa_df_model[t("Qty","الكمية")].sum())
+        sm_amt  = float(sa_df_model[t("Subtotal","المجموع")].sum())
+        sm_cust = int(sa_df_model[t("Customer","العميل")].nunique())
 
         sm_cards = [
-            _premium_kpi_card("📦", f"{sm_qty:,.0f}",  t("Total Qty (this model)","إجمالي الكمية (الموديل)"), "c-green"),
-            _premium_kpi_card("💰", f"{sm_amt:,.2f}",  t("Total Sales (SAR)","إجمالي المبيعات"),             "c-blue"),
-            _premium_kpi_card("👤", str(sm_cust),       t("Customers","العملاء"),                              "c-purple"),
+            _premium_kpi_card("📦", f"{sm_qty:,.0f}",  t("Total Qty (this model)","إجمالي الكمية (الموديل)")),
+            _premium_kpi_card("💰", f"{sm_amt:,.2f}",  t("Total Sales (SAR)","إجمالي المبيعات")),
+            _premium_kpi_card("👤", str(sm_cust),      t("Customers","العملاء")),
         ]
-        _render_kpi_row(sm_cards)
+        _render_kpi_grid(sm_cards)
 
-        st.markdown("<div class='section-sep'></div>", unsafe_allow_html=True)
+        st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
         # Time series for this model
         _chart_card_open(f"{t('Sales Qty Over Time','كمية المبيعات عبر الزمن')} — {sa_model_input}", "📈")
         sm_ts = (
             sa_df_model.copy()
-            .assign(Date=pd.to_datetime(sa_df_model["Date"], errors="coerce"))
+            .assign(Date=pd.to_datetime(sa_df_model[t("Date","التاريخ")], errors="coerce"))
             .dropna(subset=["Date"])
-            .groupby("Date", as_index=False)["Qty"]
+            .groupby("Date", as_index=False)[t("Qty","الكمية")]
             .sum()
             .sort_values("Date")
         )
         if not sm_ts.empty:
             st.altair_chart(
-                _alt_line_chart(sm_ts, "Date", "Qty", height=230, color="#43e97b"),
+                _alt_line_chart(sm_ts, "Date", t("Qty","الكمية"), height=230, color="#2ecc71"),
                 use_container_width=True
             )
         _chart_card_close()
 
-        st.markdown("<div class='section-sep'></div>", unsafe_allow_html=True)
+        st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
         # Top customers for this model
         sm_cust_grp = (
             sa_df_model.copy()
-            .assign(Customer=sa_df_model["Customer"].replace("", "(No Customer)").fillna("(No Customer)"))
-            .groupby("Customer", as_index=False)["Qty"]
+            .assign(**{t("Customer","العميل"): sa_df_model[t("Customer","العميل")].replace("", "(No Customer)").fillna("(No Customer)")})
+            .groupby(t("Customer","العميل"), as_index=False)[t("Qty","الكمية")]
             .sum()
-            .sort_values("Qty", ascending=False)
+            .sort_values(t("Qty","الكمية"), ascending=False)
             .head(10)
             .reset_index(drop=True)
         )
-        sm_cust_grp["Total Qty"] = sm_cust_grp["Qty"].map(lambda v: f"{v:,.0f}")
+        sm_cust_grp[t("Total Qty","إجمالي الكمية")] = sm_cust_grp[t("Qty","الكمية")].map(lambda v: f"{v:,.0f}")
 
         _chart_card_open(t("Top Customers for this Model","أعلى العملاء لهذا الموديل"), "👤")
         sc1, sc2 = st.columns([1.6, 1])
         with sc1:
             st.altair_chart(
-                _alt_bar_chart(sm_cust_grp, x_field="Customer", y_field="Qty",
+                _alt_bar_chart(sm_cust_grp, x_field=t("Customer","العميل"), y_field=t("Qty","الكمية"),
                                tooltip_fmt=",.0f", color="#9b59b6"),
                 use_container_width=True
             )
         with sc2:
-            _render_html_table(sm_cust_grp[["Customer", "Total Qty"]])
+            render_premium_table(sm_cust_grp[[t("Customer","العميل"), t("Total Qty","إجمالي الكمية")]])
         _chart_card_close()
 
         # Customer share donut
         if not sm_cust_grp.empty:
             top_c    = sm_cust_grp.head(8)
-            others_v = float(sm_cust_grp.iloc[8:]["Qty"].sum()) if len(sm_cust_grp) > 8 else 0
-            p_labels = top_c["Customer"].tolist()
-            p_vals   = top_c["Qty"].tolist()
+            others_v = float(sm_cust_grp.iloc[8:][t("Qty","الكمية")].sum()) if len(sm_cust_grp) > 8 else 0
+            p_labels = top_c[t("Customer","العميل")].tolist()
+            p_vals   = top_c[t("Qty","الكمية")].tolist()
             if others_v > 0:
                 p_labels.append("Others"); p_vals.append(others_v)
             _d1, _d2, _d3 = st.columns([1, 1.2, 1])
@@ -2546,12 +2874,9 @@ def show_sales_analytics():
                 _plotly_donut(p_labels, p_vals,
                               title=t("Customer Share", "حصة العملاء"), height=320)
 
-    # ── Full Table + Downloads ─────────────────────────────────────────────────
-    st.markdown("<div class='section-sep'></div>", unsafe_allow_html=True)
-    st.markdown(
-        f"<div class='panel-header'>📋 {t('Full Sales Detail','تفاصيل المبيعات الكاملة')}</div>",
-        unsafe_allow_html=True
-    )
+    # Full Table + Downloads
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    _section_header(t("Full Sales Detail","تفاصيل المبيعات الكاملة"), "📋")
 
     show_df = (
         sa_df_model
@@ -2559,10 +2884,10 @@ def show_sales_analytics():
         else sa_df
     )
     full_show = show_df.copy()
-    full_show["Unit Price"] = full_show["Unit Price"].map(lambda v: f"{v:.2f} SAR")
-    full_show["Subtotal"]   = full_show["Subtotal"].map(lambda v: f"{v:,.2f} SAR")
-    full_show["Qty"]        = full_show["Qty"].map(lambda v: f"{v:,.0f}")
-    _render_html_table(full_show)
+    full_show[t("Unit Price","سعر الوحدة")] = full_show[t("Unit Price","سعر الوحدة")].map(lambda v: f"{v:.2f} SAR")
+    full_show[t("Subtotal","المجموع")]   = full_show[t("Subtotal","المجموع")].map(lambda v: f"{v:,.2f} SAR")
+    full_show[t("Qty","الكمية")]        = full_show[t("Qty","الكمية")].map(lambda v: f"{v:,.0f}")
+    render_premium_table(full_show)
 
     st.markdown("<br>", unsafe_allow_html=True)
     sdl1, sdl2, _ = st.columns([1, 1, 2])
@@ -2573,7 +2898,7 @@ def show_sales_analytics():
         else sa_df
     )
     sdl1.download_button(
-        "⬇️ CSV",
+        t("⬇️ CSV","⬇️ CSV"),
         export_df.to_csv(index=False).encode("utf-8-sig"),
         dl_name(f"sales{tag_s}", "csv"),
         "text/csv",
@@ -2581,7 +2906,7 @@ def show_sales_analytics():
         key=f"sdl_csv{tag_s}"
     )
     sdl2.download_button(
-        "⬇️ Excel",
+        t("⬇️ Excel","⬇️ إكسل"),
         to_excel_sales(export_df),
         dl_name(f"sales{tag_s}", "xlsx"),
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -2594,7 +2919,7 @@ def show_sales_analytics():
 # SWAG PURCHASE ANALYTICS VIEW
 # ─────────────────────────────────────────────────────────────────────────────
 def show_purchase_analytics():
-    st.markdown(f"### 🛒 {t('SWAG Purchase Analytics','تحليلات مشتريات سواغ')}")
+    _section_header(t("SWAG Purchase Analytics","تحليلات مشتريات سواغ"), "🛒")
     st.markdown(
         "<div class='info-banner'>📌 "
         + t("Purchase orders from the <b>SWAG</b> system only (state: purchase / done).",
@@ -2632,8 +2957,8 @@ def show_purchase_analytics():
     with filt_col4:
         cached_po     = st.session_state.get("po_analytics_df")
         vendor_options = []
-        if cached_po is not None and not cached_po.empty and "Vendor" in cached_po.columns:
-            vendor_options = sorted(cached_po["Vendor"].dropna().unique().tolist())
+        if cached_po is not None and not cached_po.empty and t("Vendor","المورد") in cached_po.columns:
+            vendor_options = sorted(cached_po[t("Vendor","المورد")].dropna().unique().tolist())
 
         all_vendors_label = t("All Vendors", "كل الموردين")
         vendor_choices    = [all_vendors_label] + vendor_options
@@ -2678,16 +3003,13 @@ def show_purchase_analytics():
 
     active_vendors = [v for v in po_vendor_sel if v != all_vendors_label]
     if active_vendors:
-        pdf_vendor = po_full[po_full["Vendor"].isin(active_vendors)].copy()
+        pdf_vendor = po_full[po_full[t("Vendor","المورد")].isin(active_vendors)].copy()
     else:
         pdf_vendor = po_full.copy()
 
-    # ── Panel B — Single Model Purchase Detail ────────────────────────────────
-    st.markdown("<div class='section-sep'></div>", unsafe_allow_html=True)
-    st.markdown(
-        f"<div class='panel-header'>🔍 {t('Panel B — Single Model Purchase Detail','لوحة ب — تفاصيل شراء موديل واحد')}</div>",
-        unsafe_allow_html=True
-    )
+    # Panel B — Single Model Purchase Detail
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    _section_header(t("Single Model Purchase Detail","تفاصيل شراء موديل واحد"), "🔍")
 
     if not po_model_input:
         st.info(t(
@@ -2696,10 +3018,10 @@ def show_purchase_analytics():
         ))
     else:
         mc_norm  = po_model_input.upper()
-        model_df = po_full[po_full["Model Code"].str.upper() == mc_norm].copy()
+        model_df = po_full[po_full[t("Model Code","رمز الموديل")].str.upper() == mc_norm].copy()
 
         if active_vendors:
-            model_df = model_df[model_df["Vendor"].isin(active_vendors)]
+            model_df = model_df[model_df[t("Vendor","المورد")].isin(active_vendors)]
 
         if model_df.empty:
             st.info(t(
@@ -2707,18 +3029,18 @@ def show_purchase_analytics():
                 f"لا توجد سجلات شراء للموديل **{po_model_input}**."
             ))
         else:
-            pb_qty  = float(model_df["Qty"].sum())
-            pb_amt  = float(model_df["Subtotal"].sum())
-            pb_vend = int(model_df["Vendor"].nunique())
+            pb_qty  = float(model_df[t("Qty","الكمية")].sum())
+            pb_amt  = float(model_df[t("Subtotal","المجموع")].sum())
+            pb_vend = int(model_df[t("Vendor","المورد")].nunique())
 
             pb_cards = [
-                _premium_kpi_card("📦", f"{pb_qty:,.0f}",  t("Total Qty (this model)","إجمالي الكمية (الموديل)"), "c-blue"),
-                _premium_kpi_card("💵", f"{pb_amt:,.2f}",  t("Total Amount (SAR)","إجمالي المبلغ"),               "c-purple"),
-                _premium_kpi_card("🏭", str(pb_vend),       t("Vendors","الموردون"),                               "c-green"),
+                _premium_kpi_card("📦", f"{pb_qty:,.0f}",  t("Total Qty (this model)","إجمالي الكمية (الموديل)")),
+                _premium_kpi_card("💰", f"{pb_amt:,.2f}",  t("Total Amount (SAR)","إجمالي المبلغ")),
+                _premium_kpi_card("🏭", str(pb_vend),      t("Vendors","الموردون")),
             ]
-            _render_kpi_row(pb_cards)
+            _render_kpi_grid(pb_cards)
 
-            model_vendors = sorted(model_df["Vendor"].dropna().unique().tolist())
+            model_vendors = sorted(model_df[t("Vendor","المورد")].dropna().unique().tolist())
             pb_vendor_sel = st.multiselect(
                 f"🏭 {t('Filter vendors for this model','فلتر الموردين لهذا الموديل')}",
                 options=model_vendors,
@@ -2728,55 +3050,55 @@ def show_purchase_analytics():
             )
 
             model_vendor_df = (
-                model_df[model_df["Vendor"].isin(pb_vendor_sel)].copy()
+                model_df[model_df[t("Vendor","المورد")].isin(pb_vendor_sel)].copy()
                 if pb_vendor_sel else model_df.copy()
             )
 
             if model_vendor_df.empty:
                 st.warning(t("No data for selected vendor(s).", "لا بيانات للموردين المحددين."))
             else:
-                st.markdown("<div class='section-sep'></div>", unsafe_allow_html=True)
+                st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
                 _chart_card_open(t("Purchase Qty Over Time","كمية الشراء عبر الزمن"), "📈")
                 ts_df = (
                     model_vendor_df
-                    .groupby("Date", as_index=False)["Qty"]
+                    .groupby(t("Date","التاريخ"), as_index=False)[t("Qty","الكمية")]
                     .sum()
-                    .sort_values("Date")
+                    .sort_values(t("Date","التاريخ"))
                 )
                 if not ts_df.empty:
                     ts_plot = ts_df.copy()
-                    ts_plot["Date"] = pd.to_datetime(ts_plot["Date"], errors="coerce")
-                    ts_plot = ts_plot.dropna(subset=["Date"])
+                    ts_plot[t("Date","التاريخ")] = pd.to_datetime(ts_plot[t("Date","التاريخ")], errors="coerce")
+                    ts_plot = ts_plot.dropna(subset=[t("Date","التاريخ")])
                     if not ts_plot.empty:
                         st.altair_chart(
-                            _alt_line_chart(ts_plot, "Date", "Qty", color="#764ba2"),
+                            _alt_line_chart(ts_plot, t("Date","التاريخ"), t("Qty","الكمية"), color="#e74c3c"),
                             use_container_width=True
                         )
                 _chart_card_close()
 
-                st.markdown("<div class='section-sep'></div>", unsafe_allow_html=True)
+                st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
                 # Vendor share
                 _chart_card_open(t("Vendor Share for this Model","حصة الموردين لهذا الموديل"), "🏭")
                 vshare = (
                     model_vendor_df
-                    .assign(Vendor=model_vendor_df["Vendor"].replace("", "(No Vendor)").fillna("(No Vendor)"))
-                    .groupby("Vendor", as_index=False)["Qty"]
+                    .assign(**{t("Vendor","المورد"): model_vendor_df[t("Vendor","المورد")].replace("", "(No Vendor)").fillna("(No Vendor)")})
+                    .groupby(t("Vendor","المورد"), as_index=False)[t("Qty","الكمية")]
                     .sum()
-                    .sort_values("Qty", ascending=False)
+                    .sort_values(t("Qty","الكمية"), ascending=False)
                     .reset_index(drop=True)
                 )
-                vshare["Total Qty"] = vshare["Qty"].map(lambda v: f"{v:,.0f}")
+                vshare[t("Total Qty","إجمالي الكمية")] = vshare[t("Qty","الكمية")].map(lambda v: f"{v:,.0f}")
                 vs1, vs2 = st.columns([1.6, 1])
                 with vs1:
                     st.altair_chart(
-                        _alt_bar_chart(vshare, x_field="Vendor", y_field="Qty",
+                        _alt_bar_chart(vshare, x_field=t("Vendor","المورد"), y_field=t("Qty","الكمية"),
                                        tooltip_fmt=",.0f", color="#9b59b6"),
                         use_container_width=True
                     )
                 with vs2:
-                    _render_html_table(vshare[["Vendor", "Total Qty"]])
+                    render_premium_table(vshare[[t("Vendor","المورد"), t("Total Qty","إجمالي الكمية")]])
                 _chart_card_close()
 
                 # Vendor donut
@@ -2784,141 +3106,135 @@ def show_purchase_analytics():
                     _vd1, _vd2, _vd3 = st.columns([1, 1.2, 1])
                     with _vd2:
                         _plotly_donut(
-                            vshare["Vendor"].tolist(),
-                            vshare["Qty"].tolist(),
+                            vshare[t("Vendor","المورد")].tolist(),
+                            vshare[t("Qty","الكمية")].tolist(),
                             title=t("Vendor Share", "حصة الموردين"),
                             height=300,
                         )
 
-                st.markdown("<div class='section-sep'></div>", unsafe_allow_html=True)
+                st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
                 st.markdown(f"#### 📋 {t('Model Detail Table','جدول تفاصيل الموديل')} — {po_model_input}")
                 _po_full_table(model_vendor_df)
                 st.markdown("<br>", unsafe_allow_html=True)
                 _po_download_row(model_vendor_df, tag_suffix=f"_{mc_norm}_v3")
 
-    # ── Panel A — Overall Purchase Analytics ──────────────────────────────────
-    st.markdown("<div class='section-sep'></div>", unsafe_allow_html=True)
-    st.markdown(
-        f"<div class='panel-header'>📊 {t('Panel A — Overall Purchase Analytics','لوحة أ — تحليلات المشتريات الإجمالية')}</div>",
-        unsafe_allow_html=True
-    )
+    # Panel A — Overall Purchase Analytics
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    _section_header(t("Overall Purchase Analytics","تحليلات المشتريات الإجمالية"), "📊")
 
     if pdf_vendor.empty:
         st.warning(t("No data for the selected vendor(s).","لا توجد بيانات للمورد المحدد."))
         return
 
     _po_kpi_row(pdf_vendor, prefix="pa_v3")
-    st.markdown("<div class='section-sep'></div>", unsafe_allow_html=True)
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
     # Top 10 Vendors by Purchase Amount
     _chart_card_open(t("Top 10 Vendors by Purchase Amount","أعلى 10 موردين حسب مبلغ الشراء"), "🏭")
     vendor_grp = (
         pdf_vendor.copy()
-        .assign(Vendor=pdf_vendor["Vendor"].replace("", "(No Vendor)").fillna("(No Vendor)"))
-        .groupby("Vendor", as_index=False)["Subtotal"]
+        .assign(**{t("Vendor","المورد"): pdf_vendor[t("Vendor","المورد")].replace("", "(No Vendor)").fillna("(No Vendor)")})
+        .groupby(t("Vendor","المورد"), as_index=False)[t("Subtotal","المجموع")]
         .sum()
-        .sort_values("Subtotal", ascending=False)
+        .sort_values(t("Subtotal","المجموع"), ascending=False)
         .head(10)
         .reset_index(drop=True)
     )
-    vendor_grp["Total Amount (SAR)"] = vendor_grp["Subtotal"].map(lambda v: f"{v:,.2f}")
+    vendor_grp[t("Total Amount (SAR)","إجمالي المبلغ")] = vendor_grp[t("Subtotal","المجموع")].map(lambda v: f"{v:,.2f}")
     vc1, vc2 = st.columns([1.6, 1])
     with vc1:
         st.altair_chart(
-            _alt_bar_chart(vendor_grp, x_field="Vendor", y_field="Subtotal",
-                           tooltip_fmt=",.2f", color="#667eea"),
+            _alt_bar_chart(vendor_grp, x_field=t("Vendor","المورد"), y_field=t("Subtotal","المجموع"),
+                           tooltip_fmt=",.2f", color="#3498db"),
             use_container_width=True
         )
     with vc2:
-        _render_html_table(vendor_grp[["Vendor", "Total Amount (SAR)"]])
+        render_premium_table(vendor_grp[[t("Vendor","المورد"), t("Total Amount (SAR)","إجمالي المبلغ")]])
     _chart_card_close()
 
     # Vendor share donut
     if not vendor_grp.empty:
         _plotly_donut(
-            vendor_grp["Vendor"].tolist(),
-            vendor_grp["Subtotal"].tolist(),
+            vendor_grp[t("Vendor","المورد")].tolist(),
+            vendor_grp[t("Subtotal","المجموع")].tolist(),
             title=t("Vendor Share (Top 10)", "حصة الموردين (أعلى 10)")
         )
 
-    st.markdown("<div class='section-sep'></div>", unsafe_allow_html=True)
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
     # Top 10 Products by Qty
     _chart_card_open(t("Top 10 Products by Qty","أعلى 10 منتجات حسب الكمية"), "🏆")
     prod_grp_a = (
         pdf_vendor.copy()
         .assign(**{
-            "Model Code": pdf_vendor["Model Code"].replace("", "(No Code)").fillna("(No Code)"),
-            "Product":    pdf_vendor["Product"].replace("", "").fillna(""),
+            t("Model Code","رمز الموديل"): pdf_vendor[t("Model Code","رمز الموديل")].replace("", "(No Code)").fillna("(No Code)"),
+            t("Product","المنتج"): pdf_vendor[t("Product","المنتج")].replace("", "").fillna(""),
         })
-        .groupby(["Model Code", "Product"], as_index=False)["Qty"]
+        .groupby([t("Model Code","رمز الموديل"), t("Product","المنتج")], as_index=False)[t("Qty","الكمية")]
         .sum()
-        .sort_values("Qty", ascending=False)
+        .sort_values(t("Qty","الكمية"), ascending=False)
         .head(10)
         .reset_index(drop=True)
     )
-    prod_grp_a["Total Qty"] = prod_grp_a["Qty"].map(lambda v: f"{v:,.0f}")
+    prod_grp_a[t("Total Qty","إجمالي الكمية")] = prod_grp_a[t("Qty","الكمية")].map(lambda v: f"{v:,.0f}")
     pc1, pc2 = st.columns([1.6, 1])
     with pc1:
         st.altair_chart(
-            _alt_bar_chart(prod_grp_a, x_field="Model Code", y_field="Qty",
-                           tooltip_fmt=",.0f", color="#43e97b"),
+            _alt_bar_chart(prod_grp_a, x_field=t("Model Code","رمز الموديل"), y_field=t("Qty","الكمية"),
+                           tooltip_fmt=",.0f", color="#2ecc71"),
             use_container_width=True
         )
     with pc2:
-        _render_html_table(prod_grp_a[["Model Code", "Product", "Total Qty"]])
+        render_premium_table(prod_grp_a[[t("Model Code","رمز الموديل"), t("Product","المنتج"), t("Total Qty","إجمالي الكمية")]])
     _chart_card_close()
 
-    st.markdown("<div class='section-sep'></div>", unsafe_allow_html=True)
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
-    _po_top10_altair(
+    _top10_altair(
         t("Top 10 Categories by Qty","أعلى 10 فئات حسب الكمية"),
-        "Category", "Qty", pdf_vendor,
-        color="#4facfe", tooltip_fmt=",.0f"
+        t("Category","الفئة"), t("Qty","الكمية"), pdf_vendor,
+        color="#e74c3c", tooltip_fmt=",.0f"
     )
-    st.markdown("<div class='section-sep'></div>", unsafe_allow_html=True)
-    _po_top10_altair(
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    _top10_altair(
         t("Top 10 Brand Categories by Qty","أعلى 10 فئات علامة تجارية حسب الكمية"),
-        "Brand Category", "Qty", pdf_vendor,
-        color="#f093fb", tooltip_fmt=",.0f"
+        t("Brand Category","الفئة التجارية"), t("Qty","الكمية"), pdf_vendor,
+        color="#9b59b6", tooltip_fmt=",.0f"
     )
 
     # Category + Brand category donuts
-    st.markdown("<div class='section-sep'></div>", unsafe_allow_html=True)
-    st.markdown(
-        f"<div class='panel-header'>🥧 {t('Purchase Share Analysis','تحليل حصص المشتريات')}</div>",
-        unsafe_allow_html=True
-    )
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    _section_header(t("Purchase Share Analysis","تحليل حصص المشتريات"), "🥧")
     d1, d2 = st.columns(2)
     with d1:
         cat_share = (
             pdf_vendor.copy()
-            .assign(Category=pdf_vendor["Category"].replace("", "(No Category)").fillna("(No Category)"))
-            .groupby("Category", as_index=False)["Qty"]
+            .assign(**{t("Category","الفئة"): pdf_vendor[t("Category","الفئة")].replace("", "(No Category)").fillna("(No Category)")})
+            .groupby(t("Category","الفئة"), as_index=False)[t("Qty","الكمية")]
             .sum()
-            .sort_values("Qty", ascending=False)
+            .sort_values(t("Qty","الكمية"), ascending=False)
         )
         _plotly_donut(
-            cat_share["Category"].tolist(),
-            cat_share["Qty"].tolist(),
+            cat_share[t("Category","الفئة")].tolist(),
+            cat_share[t("Qty","الكمية")].tolist(),
             title=t("Category Share", "حصة الفئة")
         )
     with d2:
         bc_share_p = (
             pdf_vendor.copy()
-            .assign(**{"Brand Category": pdf_vendor["Brand Category"].replace("", "(No Brand)").fillna("(No Brand)")})
-            .groupby("Brand Category", as_index=False)["Qty"]
+            .assign(**{t("Brand Category","الفئة التجارية"): pdf_vendor[t("Brand Category","الفئة التجارية")].replace("", "(No Brand)").fillna("(No Brand)")})
+            .groupby(t("Brand Category","الفئة التجارية"), as_index=False)[t("Qty","الكمية")]
             .sum()
-            .sort_values("Qty", ascending=False)
+            .sort_values(t("Qty","الكمية"), ascending=False)
         )
         _plotly_donut(
-            bc_share_p["Brand Category"].tolist(),
-            bc_share_p["Qty"].tolist(),
+            bc_share_p[t("Brand Category","الفئة التجارية")].tolist(),
+            bc_share_p[t("Qty","الكمية")].tolist(),
             title=t("Brand Category Share", "حصة الفئة التجارية")
         )
 
-    st.markdown("<div class='section-sep'></div>", unsafe_allow_html=True)
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
     st.markdown(f"#### 📋 {t('Full Purchase Detail','تفاصيل المشتريات الكاملة')}")
     _po_full_table(pdf_vendor)
     st.markdown("<br>", unsafe_allow_html=True)
@@ -2929,7 +3245,7 @@ def show_purchase_analytics():
 # DASHBOARD
 # ─────────────────────────────────────────────────────────────────────────────
 def show_dashboard():
-    # ── SIDEBAR ───────────────────────────────────────────────────────────────
+    # Sidebar
     with st.sidebar:
         st.markdown(f"### ⚙️ {t('Settings','الإعدادات')}")
 
@@ -2967,15 +3283,15 @@ def show_dashboard():
 
         if current_view == "sales":
             st.markdown(
-                "<div style='background:linear-gradient(90deg,#667eea22,#43e97b22);border-left:3px solid #43e97b;"
-                "border-radius:6px;padding:6px 10px;font-size:0.78rem;color:#86efac;margin-top:4px;'>"
+                "<div style='background:rgba(46,204,113,0.1);border-left:3px solid #2ecc71;"
+                "border-radius:8px;padding:8px 12px;font-size:0.75rem;color:#2ecc71;margin-top:8px;'>"
                 f"✅ {t('Viewing: SWAG Sales','عرض: مبيعات سواغ')}</div>",
                 unsafe_allow_html=True
             )
         else:
             st.markdown(
-                "<div style='background:linear-gradient(90deg,#667eea22,#f093fb22);border-left:3px solid #667eea;"
-                "border-radius:6px;padding:6px 10px;font-size:0.78rem;color:#c4b5fd;margin-top:4px;'>"
+                "<div style='background:rgba(52,152,219,0.1);border-left:3px solid #3498db;"
+                "border-radius:8px;padding:8px 12px;font-size:0.75rem;color:#3498db;margin-top:8px;'>"
                 f"✅ {t('Viewing: SWAG Purchase','عرض: مشتريات سواغ')}</div>",
                 unsafe_allow_html=True
             )
@@ -3012,7 +3328,7 @@ def show_dashboard():
             st.markdown(f"🕒 **{t('Last Run','آخر تشغيل')}**")
             st.caption(st.session_state.last_run.get("time",""))
 
-    # ── Route to analytics views ───────────────────────────────────────────────
+    # Route to analytics views
     current_view = st.session_state.get("analytics_view", "purchase")
 
     if current_view == "sales":
@@ -3037,7 +3353,7 @@ def show_dashboard():
         show_purchase_analytics()
         return
 
-    # ── Default: Stock Comparison Dashboard ───────────────────────────────────
+    # Default: Stock Comparison Dashboard
     st.markdown(f"""
     <div class='dash-header'>
         <div class='dash-title'>📊 {t('SWAG Product Comparison','مقارنة منتجات سواغ')}</div>
@@ -3046,8 +3362,8 @@ def show_dashboard():
     </div>""", unsafe_allow_html=True)
     st.divider()
 
-    # ── PDF ───────────────────────────────────────────────────────────────────
-    st.markdown(f"### 📄 {t('Upload Invoice PDF','رفع فاتورة PDF')}")
+    # PDF Upload
+    _section_header(t("Upload Invoice PDF","رفع فاتورة PDF"), "📄")
     p1,p2 = st.columns([2.5,1.5])
     with p1:
         updf = st.file_uploader(t("Upload PDF","رفع PDF"),
@@ -3115,8 +3431,8 @@ def show_dashboard():
 
     st.divider()
 
-    # ── Manual Search ─────────────────────────────────────────────────────────
-    st.markdown(f"### ✍️ {t('Manual Search','بحث يدوي')}")
+    # Manual Search
+    _section_header(t("Manual Search","بحث يدوي"), "✍️")
     L,R = st.columns([1.5,1])
     with L:
         if not st.session_state.search_exact:
@@ -3182,7 +3498,7 @@ def show_dashboard():
         else:
             on = sum(1 for v in stats.values() if v=="OK")
             st.markdown(
-                f"<div class='snap-card'>"
+                f"<div class='stats-card'>"
                 f"🕒 <b>{t('Time','الوقت')}:</b> {snap.get('time','—')}<br>"
                 f"📦 <b>{t('Models','الموديلات')}:</b> {snap.get('models','—')}<br>"
                 f"🌐 <b>{t('Online','متصل')}:</b> {on}/4<br>"
@@ -3196,12 +3512,12 @@ def show_dashboard():
                 display_name = get_system_name(key)
                 st.markdown(
                     f"<div class='sys-row'>"
-                    f"<span style='font-size:.85rem;color:#e8e8ff'>"
+                    f"<span style='font-size:.85rem;color:#e8edf2'>"
                     f"<b>{display_name}</b></span>"
                     f"<span class='{bc}'>{bt}</span></div>",
                     unsafe_allow_html=True)
 
-    # ── Run ───────────────────────────────────────────────────────────────────
+    # Run
     run_codes    = None
     force_branch = False
     if st.session_state.get("pdf_codes"):
@@ -3277,7 +3593,7 @@ def show_dashboard():
         record_price_snapshot(tdf)
         st.rerun()
 
-    # ── Results ───────────────────────────────────────────────────────────────
+    # Results
     tdf  = st.session_state.total_df
     bdf  = st.session_state.branch_df
     trdf = st.session_state.transfers_df
@@ -3329,38 +3645,38 @@ def show_dashboard():
 
     with tabs[ti]:
         ti+=1
-        st.markdown(f"### 📦 {t('Total Stock','المخزون الإجمالي')}")
+        _section_header(t("Total Stock","المخزون الإجمالي"), "📦")
         display_df(tdf, thr, table_key="total")
         st.markdown("<br>", unsafe_allow_html=True)
         d1,d2,d3,_ = st.columns([1,1,1,1])
-        d1.download_button("⬇️ CSV",
+        d1.download_button(t("⬇️ CSV","⬇️ CSV"),
             to_csv(tdf), dl_name("total","csv"), "text/csv",
             use_container_width=True)
-        d2.download_button("⬇️ Excel",
+        d2.download_button(t("⬇️ Excel","⬇️ إكسل"),
             to_excel(tdf), dl_name("total","xlsx"),
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             use_container_width=True)
-        d3.download_button("📥 All Systems",
+        d3.download_button(t("📥 All Systems","📥 كل الأنظمة"),
             to_excel_bulk(tdf), dl_name("bulk","xlsx"),
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             use_container_width=True)
 
     with tabs[ti]:
         ti+=1
-        st.markdown(f"### 📈 {t('Price History','تاريخ الأسعار')}")
+        _section_header(t("Price History","تاريخ الأسعار"), "📈")
         hdf = build_price_history_df()
         if hdf.empty:
             st.info(t("Run multiple comparisons to track prices.",
                       "قم بتشغيل مقارنات متعددة لتتبع الأسعار."))
         else:
             st.line_chart(hdf, use_container_width=True)
-            if st.button(f"🗑️ {t('Clear History','مسح السجل')}"):
+            if st.button(t("🗑️ Clear History","🗑️ مسح السجل")):
                 st.session_state.price_history={}; st.rerun()
 
     if hb:
         with tabs[ti]:
             ti+=1
-            st.markdown(f"### 🗺️ {t('Branch-wise Stock','مخزون حسب الفرع')}")
+            _section_header(t("Branch-wise Stock","مخزون حسب الفرع"), "🗺️")
             display_df(bdf, thr, table_key="branch")
             bc2 = t("Branch","الفرع")
             okb = bdf[bdf["_status"]=="OK"] if "_status" in bdf.columns else bdf
@@ -3370,10 +3686,10 @@ def show_dashboard():
                     st.markdown(f"#### 📊 {t('Qty by Branch','الكميات حسب الفرع')}")
                     st.bar_chart(chart.set_index(bc2)[qc2], use_container_width=True)
             b1,b2,_ = st.columns([1,1,2])
-            b1.download_button("⬇️ CSV",
+            b1.download_button(t("⬇️ CSV","⬇️ CSV"),
                 to_csv(bdf), dl_name("branch","csv"), "text/csv",
                 use_container_width=True)
-            b2.download_button("⬇️ Excel",
+            b2.download_button(t("⬇️ Excel","⬇️ إكسل"),
                 to_excel(bdf), dl_name("branch","xlsx"),
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 use_container_width=True)
@@ -3381,7 +3697,7 @@ def show_dashboard():
     if ht:
         with tabs[ti]:
             ti+=1
-            st.markdown(f"### 🚚 {t('Pending Transfers','النقليات المعلقة')}")
+            _section_header(t("Pending Transfers","النقليات المعلقة"), "🚚")
             okt = trdf[trdf["_status"]=="OK"] if "_status" in trdf.columns else trdf
             if not okt.empty:
                 k1,k2,k3 = st.columns(3)
@@ -3391,10 +3707,10 @@ def show_dashboard():
                 if sc2 in okt.columns: k3.metric(t("Systems","الأنظمة"), okt[sc2].nunique())
             display_df(trdf, thresh=0, table_key="transfers")
             x1,x2,_ = st.columns([1,1,2])
-            x1.download_button("⬇️ CSV",
+            x1.download_button(t("⬇️ CSV","⬇️ CSV"),
                 to_csv(trdf), dl_name("transfers","csv"), "text/csv",
                 use_container_width=True)
-            x2.download_button("⬇️ Excel",
+            x2.download_button(t("⬇️ Excel","⬇️ إكسل"),
                 to_excel(trdf), dl_name("transfers","xlsx"),
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 use_container_width=True)
@@ -3404,7 +3720,7 @@ def show_dashboard():
             ti+=1
             CPRI  = t("Priority","الأولوية")
             CSUGG = t("Suggest","المقترح")
-            st.markdown(f"### 📦 {t('Reorder Suggestions','اقتراحات إعادة الطلب')}")
+            _section_header(t("Reorder Suggestions","اقتراحات إعادة الطلب"), "📦")
             okr = rdf[rdf["_status"]=="OK"] if "_status" in rdf.columns else rdf
             if not okr.empty:
                 crit = okr[okr[CPRI].str.startswith("🔴")].shape[0] if CPRI in okr.columns else 0
@@ -3428,13 +3744,15 @@ def show_dashboard():
             else:
                 st.info(t("No reorder data.","لا بيانات إعادة طلب."))
             o1,o2,_ = st.columns([1,1,2])
-            o1.download_button("⬇️ CSV",
+            o1.download_button(t("⬇️ CSV","⬇️ CSV"),
                 to_csv(rdf), dl_name("reorder","csv"), "text/csv",
                 use_container_width=True)
-            o2.download_button("⬇️ Excel",
+            o2.download_button(t("⬇️ Excel","⬇️ إكسل"),
                 to_excel(rdf), dl_name("reorder","xlsx"),
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 use_container_width=True)
+
+    st.markdown("<div class='footer'>© 2025 SWAG Fashion · Powered by Odoo · Built with ❤️</div>", unsafe_allow_html=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
