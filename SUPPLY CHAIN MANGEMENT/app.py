@@ -114,10 +114,15 @@ def validate_system_cfg(key):
     cfg = st.secrets.get(key)
     if not cfg:
         return None, f"{key} config missing"
-    required = ["url", "db", "user", "apikey"]
+    required = ["url", "db", "user"]
     miss = [r for r in required if r not in cfg]
     if miss:
         return None, f"{key} missing: {', '.join(miss)}"
+    api_key = cfg.get("apikey") or cfg.get("api_key")
+    if not api_key:
+        return None, f"{key} missing: apikey/api_key"
+    cfg = dict(cfg)
+    cfg["_resolved_api_key"] = api_key
     return cfg, None
 
 
@@ -181,7 +186,7 @@ def fetch_company_history(company_key, kind, modelcode, datefrom, dateto):
     cfg, err = validate_system_cfg(company_key)
     if not cfg:
         return df_empty, err
-    uid = auth(cfg["url"], cfg["db"], cfg["user"], cfg["apikey"])
+    uid = auth(cfg["url"], cfg["db"], cfg["user"], cfg["_resolved_api_key"])
     if not uid:
         return df_empty, f"{company_key} auth failed"
     try:
@@ -205,21 +210,21 @@ def fetch_company_history(company_key, kind, modelcode, datefrom, dateto):
             domain.append(["product_id.default_code", "ilike", str(modelcode).strip()])
 
         line_fields = ["order_id", "product_id", qty_field, "price_unit"]
-        lines = x(cfg["url"], cfg["db"], uid, cfg["apikey"], line_model, "search_read", [domain], {"fields": line_fields, "limit": 20000, "order": "order_id desc"})
+        lines = x(cfg["url"], cfg["db"], uid, cfg["_resolved_api_key"], line_model, "search_read", [domain], {"fields": line_fields, "limit": 20000, "order": "order_id desc"})
         if not lines:
             return df_empty, None
 
         orderids = [l["order_id"][0] for l in lines if isinstance(l.get("order_id"), list)]
         productids = [l["product_id"][0] for l in lines if isinstance(l.get("product_id"), list)]
-        orders = x(cfg["url"], cfg["db"], uid, cfg["apikey"], order_model, "search_read", [[["id", "in", orderids]]], {"fields": ["id", "name", "partner_id", "date_order"], "limit": len(orderids) + 10})
-        products = x(cfg["url"], cfg["db"], uid, cfg["apikey"], "product.product", "search_read", [[["id", "in", productids]]], {"fields": ["id", "default_code", "display_name", "categ_id", "product_tmpl_id"], "limit": len(productids) + 10})
+        orders = x(cfg["url"], cfg["db"], uid, cfg["_resolved_api_key"], order_model, "search_read", [[["id", "in", orderids]]], {"fields": ["id", "name", "partner_id", "date_order"], "limit": len(orderids) + 10})
+        products = x(cfg["url"], cfg["db"], uid, cfg["_resolved_api_key"], "product.product", "search_read", [[["id", "in", productids]]], {"fields": ["id", "default_code", "display_name", "categ_id", "product_tmpl_id"], "limit": len(productids) + 10})
         ordermap = {o["id"]: o for o in orders}
         prodmap = {p["id"]: p for p in products}
         tmplids = [p["product_tmpl_id"][0] for p in products if isinstance(p.get("product_tmpl_id"), list)]
         tmplmap = {}
         if tmplids:
             try:
-                tmpls = x(cfg["url"], cfg["db"], uid, cfg["apikey"], "product.template", "search_read", [[["id", "in", tmplids]]], {"fields": ["id", "x_brand_category_id"], "limit": len(tmplids) + 10})
+                tmpls = x(cfg["url"], cfg["db"], uid, cfg["_resolved_api_key"], "product.template", "search_read", [[["id", "in", tmplids]]], {"fields": ["id", "x_brand_category_id"], "limit": len(tmplids) + 10})
                 tmplmap = {r["id"]: r for r in tmpls}
             except Exception:
                 tmplmap = {}
