@@ -32,260 +32,880 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 
+/* ── APP BACKGROUND ── */
 .stApp {
-    background: linear-gradient(135deg, #0a0c10 0%, #121417 100%);
+    background: #05070d;
+    background-image:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(52,152,219,0.12) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 40% at 80% 90%, rgba(46,204,113,0.06) 0%, transparent 60%);
     min-height: 100vh;
 }
 
+/* ── SIDEBAR ── */
 section[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #0f1115 0%, #0a0c10 100%) !important;
-    border-right: 1px solid rgba(255,255,255,0.05);
-    box-shadow: 4px 0 20px rgba(0,0,0,0.3);
+    background: linear-gradient(180deg, #080b12 0%, #05070d 100%) !important;
+    border-right: 1px solid rgba(52,152,219,0.12) !important;
+    box-shadow: 4px 0 40px rgba(0,0,0,0.6);
 }
+section[data-testid="stSidebar"] > div { padding-top: 0 !important; }
 section[data-testid="stSidebar"] *,
 section[data-testid="stSidebar"] label,
 section[data-testid="stSidebar"] span,
 section[data-testid="stSidebar"] p,
-section[data-testid="stSidebar"] div { color: #e8edf2 !important; }
+section[data-testid="stSidebar"] div { color: #c8d6e8 !important; }
 section[data-testid="stSidebar"] input {
-    background: #1a1e24 !important;
+    background: rgba(255,255,255,0.04) !important;
     color: #e8edf2 !important;
-    border: 1px solid rgba(255,255,255,0.1) !important;
+    border: 1px solid rgba(52,152,219,0.2) !important;
+    border-radius: 10px !important;
 }
-
-@keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(30px); }
-    to   { opacity: 1; transform: translateY(0); }
+.sidebar-logo {
+    background: linear-gradient(135deg, rgba(52,152,219,0.15), rgba(46,204,113,0.08));
+    border-bottom: 1px solid rgba(52,152,219,0.15);
+    padding: 20px 16px 16px;
+    margin: -1rem -1rem 16px;
+    text-align: center;
 }
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-}
-@keyframes slideInLeft {
-    from { opacity: 0; transform: translateX(-30px); }
-    to   { opacity: 1; transform: translateX(0); }
-}
-@keyframes shimmer {
-    0%   { background-position: -200% center; }
-    100% { background-position:  200% center; }
-}
-
-.login-orb {
-    width: 100px; height: 100px; border-radius: 50%;
-    background: linear-gradient(135deg, #2c3e50, #3498db);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 2.5rem; margin: 0 auto 20px;
-    animation: fadeInUp 0.6s ease forwards;
-    box-shadow: 0 8px 32px rgba(52,152,219,0.3);
-}
-.login-title {
-    font-size: 2rem; font-weight: 700;
+.sidebar-logo-text {
+    font-size: 1.3rem;
+    font-weight: 800;
     background: linear-gradient(90deg, #3498db, #2ecc71);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    text-align: center; margin-bottom: 8px;
-    animation: fadeInUp 0.7s ease forwards;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
 }
-.login-subtitle {
-    color: #8e9aaf !important; font-size: 0.9rem; text-align: center;
-    animation: fadeInUp 0.8s ease forwards; margin-bottom: 28px;
+.sidebar-logo-sub {
+    font-size: 0.65rem;
+    color: #5a7a9a !important;
+    margin-top: 2px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
 }
-.login-card {
-    background: rgba(20,24,30,0.8); backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.1); border-radius: 24px;
-    padding: 32px 36px; width: 100%;
-    animation: fadeInUp 0.9s ease forwards;
+.sidebar-section {
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin: 8px 0;
 }
+.sidebar-section-title {
+    font-size: 0.65rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: #3498db !important;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.sidebar-user-card {
+    background: linear-gradient(135deg, rgba(52,152,219,0.1), rgba(46,204,113,0.05));
+    border: 1px solid rgba(52,152,219,0.2);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin: 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.sidebar-avatar {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, #3498db, #2ecc71);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; flex-shrink: 0;
+}
+.sidebar-user-name {
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    color: #e8edf2 !important;
+}
+.sidebar-user-role {
+    font-size: 0.62rem !important;
+    color: #5a7a9a !important;
+}
+.nav-btn-active {
+    background: linear-gradient(135deg, rgba(52,152,219,0.2), rgba(46,204,113,0.1)) !important;
+    border: 1px solid rgba(52,152,219,0.4) !important;
+    color: #3498db !important;
+}
+.sys-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    margin: 2px 0;
+}
+.sys-badge-ok   { background: rgba(46,204,113,0.12);  color: #2ecc71; border: 1px solid rgba(46,204,113,0.25); }
+.sys-badge-err  { background: rgba(231,76,60,0.12);   color: #e74c3c; border: 1px solid rgba(231,76,60,0.25); }
+.sys-badge-off  { background: rgba(241,196,15,0.12);  color: #f1c40f; border: 1px solid rgba(241,196,15,0.25); }
 
-.dash-header { text-align: center; padding: 20px 0 28px; }
-.dash-title {
-    font-size: 2.2rem; font-weight: 800;
+/* ── ANIMATIONS ── */
+@keyframes fadeInUp   { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+@keyframes fadeInLeft { from { opacity:0; transform:translateX(-24px); } to { opacity:1; transform:translateX(0); } }
+@keyframes fadeIn     { from { opacity:0; } to { opacity:1; } }
+@keyframes shimmer    { 0% { background-position:-200% center; } 100% { background-position:200% center; } }
+@keyframes pulse      { 0%,100% { opacity:1; } 50% { opacity:0.6; } }
+@keyframes glow       { 0%,100% { box-shadow:0 0 20px rgba(52,152,219,0.2); } 50% { box-shadow:0 0 40px rgba(52,152,219,0.4); } }
+@keyframes float      { 0%,100% { transform:translateY(0px); } 50% { transform:translateY(-6px); } }
+
+/* ── LOGIN PAGE ── */
+.login-page-wrapper {
+    min-height: 90vh;
+    display: flex;
+    align-items: center;
+    padding: 40px 0;
+}
+.login-left {
+    animation: fadeInLeft 0.7s ease forwards;
+}
+.login-hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(52,152,219,0.1);
+    border: 1px solid rgba(52,152,219,0.3);
+    border-radius: 30px;
+    padding: 5px 14px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #3498db;
+    letter-spacing: 0.5px;
+    margin-bottom: 24px;
+}
+.login-hero-badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: #2ecc71;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+.login-hero-title {
+    font-size: 3.2rem;
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: -1.5px;
+    color: #fff;
+    margin-bottom: 16px;
+}
+.login-hero-title span {
     background: linear-gradient(90deg, #3498db, #2ecc71, #3498db);
     background-size: 200% auto;
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
     animation: shimmer 4s linear infinite;
 }
-.dash-subtitle { color: #8e9aaf; font-size: 0.9rem; margin-top: 4px; }
+.login-hero-sub {
+    font-size: 1rem;
+    color: #6b8ab0;
+    line-height: 1.7;
+    margin-bottom: 32px;
+    max-width: 420px;
+}
+.login-feature-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 36px;
+}
+.login-chip {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 0.75rem;
+    color: #8ea8c3;
+    font-weight: 500;
+}
+.login-systems-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    max-width: 380px;
+}
+.login-sys-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.login-sys-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #2ecc71;
+    animation: pulse 2s infinite;
+    flex-shrink: 0;
+}
+.login-sys-name {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #c8d6e8;
+}
+.login-sys-label {
+    font-size: 0.6rem;
+    color: #4a6070;
+    margin-top: 1px;
+}
+.login-card-wrapper {
+    background: rgba(12,16,24,0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(52,152,219,0.15);
+    border-radius: 28px;
+    padding: 40px 36px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+    animation: fadeInUp 0.8s ease forwards;
+    position: relative;
+    overflow: hidden;
+}
+.login-card-wrapper::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(52,152,219,0.5), rgba(46,204,113,0.5), transparent);
+}
+.login-card-icon {
+    width: 56px; height: 56px;
+    background: linear-gradient(135deg, #1a4a6e, #0d2d44);
+    border: 1px solid rgba(52,152,219,0.3);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    animation: float 4s ease-in-out infinite;
+}
+.login-card-title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #e8edf2;
+    margin-bottom: 4px;
+    letter-spacing: -0.5px;
+}
+.login-card-sub {
+    font-size: 0.82rem;
+    color: #506070;
+    margin-bottom: 28px;
+}
+.login-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(52,152,219,0.2), transparent);
+    margin: 20px 0;
+}
 
+/* ── HERO BANNER ── */
+.dashboard-hero {
+    background: linear-gradient(135deg, rgba(12,16,24,0.95) 0%, rgba(8,12,20,0.95) 100%);
+    border: 1px solid rgba(52,152,219,0.12);
+    border-radius: 24px;
+    padding: 36px 40px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeInUp 0.5s ease forwards;
+}
+.dashboard-hero::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse 60% 80% at 0% 50%, rgba(52,152,219,0.07) 0%, transparent 60%),
+                radial-gradient(ellipse 40% 60% at 100% 50%, rgba(46,204,113,0.04) 0%, transparent 60%);
+    pointer-events: none;
+}
+.dashboard-hero::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(52,152,219,0.5) 30%, rgba(46,204,113,0.5) 70%, transparent 100%);
+}
+.hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(52,152,219,0.1);
+    border: 1px solid rgba(52,152,219,0.25);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #3498db;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+}
+.hero-eyebrow-dot {
+    width: 5px; height: 5px;
+    background: #2ecc71;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+.hero-title {
+    font-size: 2.4rem;
+    font-weight: 900;
+    letter-spacing: -1px;
+    line-height: 1.15;
+    margin-bottom: 10px;
+    color: #f0f4f8;
+}
+.hero-title-accent {
+    background: linear-gradient(90deg, #3498db, #2ecc71, #3498db);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 5s linear infinite;
+}
+.hero-subtitle {
+    font-size: 0.9rem;
+    color: #5a7a9a;
+    line-height: 1.6;
+    max-width: 500px;
+    margin-bottom: 24px;
+}
+.hero-stats-row {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+.hero-stat {
+    display: flex;
+    flex-direction: column;
+}
+.hero-stat-value {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #e8edf2;
+    line-height: 1;
+}
+.hero-stat-label {
+    font-size: 0.65rem;
+    color: #4a6880;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-top: 3px;
+}
+.hero-stat-divider {
+    width: 1px;
+    background: rgba(255,255,255,0.08);
+    height: 36px;
+    align-self: center;
+}
+.hero-badges {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    justify-content: center;
+}
+.hero-sys-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 12px;
+    padding: 10px 14px;
+    transition: all 0.2s ease;
+}
+.hero-sys-badge:hover {
+    background: rgba(52,152,219,0.07);
+    border-color: rgba(52,152,219,0.2);
+}
+.hero-sys-indicator {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.indicator-ok  { background: #2ecc71; box-shadow: 0 0 6px rgba(46,204,113,0.5); animation: pulse 2s infinite; }
+.indicator-off { background: #e74c3c; }
+.indicator-unk { background: #f1c40f; }
+.hero-sys-name { font-size: 0.78rem; font-weight: 600; color: #c8d6e8; }
+.hero-sys-sub  { font-size: 0.62rem; color: #4a6070; margin-top: 1px; }
+
+/* ── KPI CARDS ── */
 .kpi-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px; margin: 20px 0 24px;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 14px;
+    margin: 20px 0;
 }
 .kpi-card {
-    background: linear-gradient(135deg, #1a1e24, #14181e);
-    border: 1px solid rgba(255,255,255,0.08); border-radius: 20px;
-    padding: 20px; position: relative; overflow: hidden;
+    background: rgba(12,16,24,0.8);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 20px;
+    padding: 22px 20px;
+    position: relative;
+    overflow: hidden;
     transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
     animation: fadeInUp 0.5s ease forwards;
+    cursor: default;
 }
 .kpi-card:hover {
     transform: translateY(-4px);
-    border-color: rgba(52,152,219,0.3);
-    box-shadow: 0 12px 32px rgba(0,0,0,0.3);
+    border-color: rgba(52,152,219,0.25);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(52,152,219,0.1);
 }
 .kpi-card::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
     background: linear-gradient(90deg, #3498db, #2ecc71);
-    border-radius: 20px 20px 0 0;
 }
-.kpi-icon { font-size: 1.8rem; margin-bottom: 12px; display: block; opacity: 0.9; }
+.kpi-card-bg {
+    position: absolute;
+    top: 0; right: 0; bottom: 0;
+    width: 40%;
+    background: radial-gradient(ellipse at 80% 50%, rgba(52,152,219,0.05), transparent 70%);
+    pointer-events: none;
+}
+.kpi-icon {
+    font-size: 1.6rem;
+    margin-bottom: 14px;
+    display: block;
+    opacity: 0.85;
+}
 .kpi-value {
-    font-size: 1.8rem; font-weight: 800; line-height: 1.2; margin-bottom: 6px;
-    background: linear-gradient(90deg, #fff, #3498db);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    font-size: 1.75rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 6px;
+    background: linear-gradient(135deg, #ffffff, #a8c8e8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
     letter-spacing: -0.5px;
 }
-.kpi-label { font-size: 0.75rem; color: #8e9aaf; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
-.kpi-trend { font-size: 0.7rem; margin-top: 8px; color: #2ecc71; }
+.kpi-label {
+    font-size: 0.7rem;
+    color: #4a6880;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
+.kpi-trend {
+    font-size: 0.68rem;
+    color: #2ecc71;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
 
+/* ── SECTION HEADERS ── */
 .section-header {
-    background: linear-gradient(135deg, #1a1e24, #14181e);
-    border-left: 4px solid #3498db; border-radius: 12px;
-    padding: 12px 20px; margin: 24px 0 20px;
-    font-weight: 700; font-size: 1rem; color: #e8edf2;
-    letter-spacing: -0.2px; animation: slideInLeft 0.4s ease forwards;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 28px 0 18px;
+    animation: fadeInLeft 0.4s ease forwards;
 }
-
-.chart-card {
-    background: linear-gradient(135deg, #1a1e24, #14181e);
-    border: 1px solid rgba(255,255,255,0.05); border-radius: 20px;
-    padding: 20px; margin-bottom: 20px;
-    transition: all 0.3s ease; animation: fadeInUp 0.5s ease forwards;
-}
-.chart-card:hover {
-    border-color: rgba(52,152,219,0.2);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-}
-.chart-title {
-    font-size: 0.9rem; font-weight: 600; color: #8e9aaf;
-    margin-bottom: 16px; display: flex; align-items: center;
-    gap: 8px; letter-spacing: 0.3px;
-}
-.chart-title span.accent {
-    width: 3px; height: 16px;
+.section-header-bar {
+    width: 3px; height: 22px;
     background: linear-gradient(180deg, #3498db, #2ecc71);
-    border-radius: 2px; display: inline-block;
+    border-radius: 2px;
+    flex-shrink: 0;
 }
-
-.table-wrapper {
-    width: 100%; overflow-x: auto; border-radius: 20px;
-    background: linear-gradient(135deg, #1a1e24, #14181e);
-    border: 1px solid rgba(255,255,255,0.05); margin: 16px 0;
-    animation: fadeInUp 0.5s ease forwards;
+.section-header-content {}
+.section-header-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #e8edf2;
+    letter-spacing: -0.2px;
+    line-height: 1.2;
 }
-.premium-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-.premium-table thead tr {
-    background: linear-gradient(135deg, #0f1115, #0a0c10);
-    border-bottom: 1px solid rgba(52,152,219,0.3);
+.section-header-sub {
+    font-size: 0.68rem;
+    color: #4a6880;
+    margin-top: 1px;
 }
-.premium-table thead th {
-    color: #3498db; font-weight: 600; padding: 14px 16px;
-    text-align: center; font-size: 0.8rem; text-transform: uppercase;
-    letter-spacing: 0.5px; position: sticky; top: 0;
-    background: #0f1115; z-index: 10;
-}
-.premium-table tbody tr {
-    transition: all 0.2s ease;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-}
-.premium-table tbody tr:hover {
-    background: rgba(52,152,219,0.1); transform: scale(1.01);
-}
-.premium-table tbody td { padding: 12px 16px; text-align: center; color: #e8edf2; }
-.premium-table tbody td:first-child { font-weight: 600; color: #3498db; }
-
-.pagination-bar {
-    display: flex; align-items: center; justify-content: center;
-    gap: 12px; padding: 12px 0; margin-top: 4px;
-    font-size: 0.85rem; color: #8e9aaf;
-}
-.page-info {
-    background: rgba(52,152,219,0.12); border: 1px solid rgba(52,152,219,0.3);
-    border-radius: 8px; padding: 4px 14px; color: #3498db; font-weight: 600;
-}
-
-[dir="rtl"] .premium-table thead th { text-align: right; }
-[dir="rtl"] .section-header { border-left: none; border-right: 4px solid #3498db; }
-
-.stButton button {
-    background: linear-gradient(135deg, #2c3e50, #1a1e24) !important;
-    border: 1px solid rgba(52,152,219,0.3) !important;
-    border-radius: 12px !important; color: #e8edf2 !important;
-    font-weight: 600 !important; transition: all 0.3s ease !important;
-}
-.stButton button:hover {
-    transform: translateY(-2px);
-    border-color: #3498db !important;
-    box-shadow: 0 4px 12px rgba(52,152,219,0.2) !important;
-}
-.stButton button[kind="primary"] {
-    background: linear-gradient(90deg, #3498db, #2ecc71) !important;
-    border: none !important; color: white !important;
-}
-
-.stTextInput input, .stNumberInput input,
-.stTextArea textarea, .stDateInput input {
-    background: #1a1e24 !important;
-    border: 1px solid rgba(255,255,255,0.1) !important;
-    border-radius: 12px !important; color: #e8edf2 !important;
-}
-.stTextInput input:focus, .stNumberInput input:focus, .stTextArea textarea:focus {
-    border-color: #3498db !important;
-    box-shadow: 0 0 0 2px rgba(52,152,219,0.2) !important;
-}
-
-.stTabs [data-baseweb="tab-list"] {
-    background: #1a1e24; border-radius: 12px; padding: 4px; gap: 4px;
-}
-.stTabs [data-baseweb="tab"] {
-    color: #8e9aaf !important; border-radius: 10px !important;
-    font-size: 0.8rem !important; font-weight: 600 !important; padding: 8px 20px !important;
-}
-.stTabs [aria-selected="true"] {
-    background: linear-gradient(90deg, #3498db, #2ecc71) !important; color: white !important;
-}
-
-.info-banner {
-    background: rgba(52,152,219,0.1); border-left: 3px solid #3498db;
-    border-radius: 12px; padding: 12px 16px; margin: 16px 0;
-    font-size: 0.85rem; color: #8e9aaf;
-}
-.warn-banner {
-    background: rgba(241,196,15,0.1); border-left: 3px solid #f1c40f;
-    border-radius: 12px; padding: 12px 16px; margin: 16px 0;
-    font-size: 0.85rem; color: #f1c40f;
-}
-.alert-banner {
-    background: rgba(231,76,60,0.1); border-left: 3px solid #e74c3c;
-    border-radius: 12px; padding: 12px 16px; margin: 16px 0;
-    font-size: 0.85rem; color: #e74c3c; animation: pulse 2s infinite;
-}
-@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
-
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: #0a0c10; }
-::-webkit-scrollbar-thumb { background: #2c3e50; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #3498db; }
-
-.divider {
+.section-divider {
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(52,152,219,0.3), transparent);
+    background: linear-gradient(90deg, transparent, rgba(52,152,219,0.15), rgba(46,204,113,0.1), transparent);
     margin: 24px 0;
 }
-.stats-card {
-    background: #1a1e24; border-radius: 16px; padding: 16px;
-    text-align: center; border: 1px solid rgba(255,255,255,0.05);
+
+/* ── CHART CARDS ── */
+.chart-card {
+    background: rgba(10,13,20,0.7);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 20px;
+    padding: 22px;
+    margin-bottom: 16px;
+    transition: all 0.3s ease;
+    animation: fadeInUp 0.5s ease forwards;
+    position: relative;
+    overflow: hidden;
 }
-.stats-value { font-size: 1.5rem; font-weight: 800; color: #3498db; }
-.stats-label { font-size: 0.7rem; color: #8e9aaf; margin-top: 4px; }
+.chart-card:hover {
+    border-color: rgba(52,152,219,0.15);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+.chart-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(ellipse 40% 40% at 100% 0%, rgba(52,152,219,0.03), transparent);
+    pointer-events: none;
+}
+.chart-title {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #6b8ab0;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    letter-spacing: 0.2px;
+}
+.chart-title-accent {
+    display: inline-block;
+    width: 3px; height: 14px;
+    background: linear-gradient(180deg, #3498db, #2ecc71);
+    border-radius: 2px;
+}
+
+/* ── TABLE ── */
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    border-radius: 18px;
+    background: rgba(8,11,18,0.8);
+    border: 1px solid rgba(255,255,255,0.05);
+    margin: 12px 0;
+    animation: fadeInUp 0.5s ease forwards;
+}
+.premium-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+}
+.premium-table thead tr {
+    background: rgba(5,7,13,0.9);
+    border-bottom: 1px solid rgba(52,152,219,0.2);
+}
+.premium-table thead th {
+    color: #3498db;
+    font-weight: 700;
+    padding: 14px 18px;
+    text-align: center;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    position: sticky;
+    top: 0;
+    background: #05070d;
+    z-index: 10;
+    white-space: nowrap;
+}
+.premium-table tbody tr {
+    transition: all 0.15s ease;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.premium-table tbody tr:hover {
+    background: rgba(52,152,219,0.07);
+}
+.premium-table tbody tr:nth-child(even) {
+    background: rgba(255,255,255,0.01);
+}
+.premium-table tbody tr:nth-child(even):hover {
+    background: rgba(52,152,219,0.07);
+}
+.premium-table tbody td {
+    padding: 11px 18px;
+    text-align: center;
+    color: #c8d6e8;
+    vertical-align: middle;
+}
+.premium-table tbody td:first-child {
+    font-weight: 700;
+    color: #4aa8e0;
+}
+.premium-table td.accent-cell {
+    font-weight: 700;
+    color: #4aa8e0 !important;
+}
+
+/* ── PAGINATION ── */
+.pagination-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 10px 0;
+    font-size: 0.82rem;
+    color: #6b8ab0;
+}
+.page-info {
+    background: rgba(52,152,219,0.1);
+    border: 1px solid rgba(52,152,219,0.25);
+    border-radius: 8px;
+    padding: 4px 14px;
+    color: #3498db;
+    font-weight: 700;
+    font-size: 0.8rem;
+}
+
+/* ── BANNERS ── */
+.info-banner {
+    background: rgba(52,152,219,0.07);
+    border: 1px solid rgba(52,152,219,0.2);
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin: 12px 0;
+    font-size: 0.82rem;
+    color: #6b8ab0;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+}
+.warn-banner {
+    background: rgba(241,196,15,0.07);
+    border: 1px solid rgba(241,196,15,0.2);
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin: 12px 0;
+    font-size: 0.82rem;
+    color: #c9a227;
+}
+.alert-banner {
+    background: rgba(231,76,60,0.07);
+    border: 1px solid rgba(231,76,60,0.2);
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin: 12px 0;
+    font-size: 0.82rem;
+    color: #e74c3c;
+    animation: pulse 2.5s infinite;
+}
+
+/* ── STREAMLIT OVERRIDES ── */
+.stButton > button {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    border-radius: 12px !important;
+    color: #c8d6e8 !important;
+    font-weight: 600 !important;
+    font-size: 0.82rem !important;
+    letter-spacing: 0.2px !important;
+    transition: all 0.25s ease !important;
+    padding: 8px 18px !important;
+}
+.stButton > button:hover {
+    background: rgba(52,152,219,0.1) !important;
+    border-color: rgba(52,152,219,0.35) !important;
+    color: #e8edf2 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 16px rgba(52,152,219,0.15) !important;
+}
+.stButton > button[kind="primary"] {
+    background: linear-gradient(135deg, #1e5a8e, #1a4a7a) !important;
+    border: 1px solid rgba(52,152,219,0.5) !important;
+    color: #fff !important;
+    box-shadow: 0 4px 16px rgba(52,152,219,0.2) !important;
+}
+.stButton > button[kind="primary"]:hover {
+    background: linear-gradient(135deg, #2470b0, #1e5a8e) !important;
+    box-shadow: 0 6px 24px rgba(52,152,219,0.35) !important;
+    transform: translateY(-2px) !important;
+}
+.stTextInput > div > div > input,
+.stNumberInput > div > div > input,
+.stTextArea > div > div > textarea,
+.stDateInput > div > div > input {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    border-radius: 12px !important;
+    color: #e8edf2 !important;
+    font-size: 0.85rem !important;
+    padding: 10px 14px !important;
+    transition: all 0.2s ease !important;
+}
+.stTextInput > div > div > input:focus,
+.stNumberInput > div > div > input:focus,
+.stTextArea > div > div > textarea:focus {
+    border-color: rgba(52,152,219,0.5) !important;
+    box-shadow: 0 0 0 3px rgba(52,152,219,0.1) !important;
+    background: rgba(52,152,219,0.04) !important;
+}
+.stTextInput label, .stNumberInput label, .stTextArea label,
+.stDateInput label, .stSelectbox label, .stMultiSelect label,
+.stRadio label, .stSlider label, .stFileUploader label {
+    color: #6b8ab0 !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.3px !important;
+    text-transform: uppercase !important;
+}
+.stSelectbox > div > div {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    border-radius: 12px !important;
+    color: #e8edf2 !important;
+}
+.stMultiSelect > div > div {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    border-radius: 12px !important;
+}
+.stTabs [data-baseweb="tab-list"] {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 4px;
+    gap: 4px;
+}
+.stTabs [data-baseweb="tab"] {
+    color: #6b8ab0 !important;
+    border-radius: 10px !important;
+    font-size: 0.78rem !important;
+    font-weight: 600 !important;
+    padding: 8px 18px !important;
+    border: none !important;
+    background: transparent !important;
+    transition: all 0.2s ease !important;
+}
+.stTabs [aria-selected="true"] {
+    background: linear-gradient(135deg, rgba(52,152,219,0.2), rgba(46,204,113,0.1)) !important;
+    color: #e8edf2 !important;
+    border: 1px solid rgba(52,152,219,0.3) !important;
+}
+.stDownloadButton > button {
+    background: rgba(52,152,219,0.07) !important;
+    border: 1px solid rgba(52,152,219,0.2) !important;
+    color: #4aa8e0 !important;
+    border-radius: 10px !important;
+    font-size: 0.78rem !important;
+    font-weight: 600 !important;
+}
+.stDownloadButton > button:hover {
+    background: rgba(52,152,219,0.15) !important;
+    border-color: rgba(52,152,219,0.4) !important;
+    transform: translateY(-1px) !important;
+}
+.stMetric {
+    background: rgba(12,16,24,0.7);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 16px;
+    padding: 16px !important;
+}
+.stMetric label {
+    color: #4a6880 !important;
+    font-size: 0.68rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.7px !important;
+}
+.stMetric [data-testid="stMetricValue"] {
+    color: #e8edf2 !important;
+    font-size: 1.5rem !important;
+    font-weight: 800 !important;
+}
+.stSlider > div > div > div {
+    background: rgba(52,152,219,0.3) !important;
+}
+.stSlider > div > div > div > div {
+    background: #3498db !important;
+}
+.stCheckbox > label > div[role="checkbox"] {
+    border: 1px solid rgba(52,152,219,0.4) !important;
+    border-radius: 5px !important;
+}
+.stRadio > div {
+    gap: 8px !important;
+}
+.stExpander {
+    background: rgba(12,16,24,0.6) !important;
+    border: 1px solid rgba(255,255,255,0.06) !important;
+    border-radius: 14px !important;
+}
+.stExpander summary {
+    color: #6b8ab0 !important;
+    font-size: 0.82rem !important;
+    font-weight: 600 !important;
+}
+.stSpinner > div { border-top-color: #3498db !important; }
+div[data-testid="stHorizontalBlock"] { gap: 14px !important; }
+div[data-testid="column"] { gap: 0 !important; }
+.stAlert {
+    border-radius: 12px !important;
+    border: none !important;
+    font-size: 0.82rem !important;
+}
+hr { border-color: rgba(255,255,255,0.05) !important; margin: 20px 0 !important; }
+.stMarkdown h4 { color: #c8d6e8; font-size: 0.9rem; font-weight: 700; }
+.stMarkdown p  { color: #6b8ab0; font-size: 0.82rem; }
+
+/* ── STATS CARD ── */
+.stats-card {
+    background: rgba(12,16,24,0.7);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 14px;
+    padding: 16px;
+    font-size: 0.8rem;
+    color: #6b8ab0;
+    line-height: 1.8;
+}
+.stats-card b { color: #c8d6e8; }
+.stats-value { font-size: 1.4rem; font-weight: 800; color: #3498db; }
+.stats-label { font-size: 0.68rem; color: #4a6880; margin-top: 2px; }
+
+/* ── FOOTER ── */
 .footer {
-    text-align: center; padding: 24px 0; color: #5a6e8a;
-    font-size: 0.7rem; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 40px;
+    text-align: center;
+    padding: 28px 0 16px;
+    color: #2a3a4a;
+    font-size: 0.68rem;
+    border-top: 1px solid rgba(255,255,255,0.04);
+    margin-top: 48px;
+    letter-spacing: 0.3px;
+}
+.footer span { color: #3a5a7a; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #05070d; }
+::-webkit-scrollbar-thumb { background: #1a2a3a; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #2a4a6a; }
+
+/* ── RTL SUPPORT ── */
+[dir="rtl"] .premium-table thead th { text-align: right; }
+[dir="rtl"] .section-header-bar { order: -1; }
+[dir="rtl"] .info-banner { flex-direction: row-reverse; }
+
+/* ── FILE UPLOADER ── */
+.stFileUploader > div {
+    background: rgba(255,255,255,0.02) !important;
+    border: 1px dashed rgba(52,152,219,0.25) !important;
+    border-radius: 14px !important;
+    padding: 16px !important;
+    transition: all 0.2s ease !important;
+}
+.stFileUploader > div:hover {
+    border-color: rgba(52,152,219,0.45) !important;
+    background: rgba(52,152,219,0.03) !important;
+}
+
+/* ── TOGGLE ── */
+.stToggle > label { color: #6b8ab0 !important; font-size: 0.75rem !important; }
+
+/* ── MOBILE RESPONSIVE ── */
+@media (max-width: 768px) {
+    .login-hero-title { font-size: 2rem; }
+    .dashboard-hero { padding: 24px 20px; }
+    .hero-title { font-size: 1.6rem; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .hero-stats-row { gap: 16px; }
 }
 </style>
 """, unsafe_allow_html=True)
@@ -298,8 +918,6 @@ SYSTEM_KEYS = ["SWAG", "LAROUCHE", "DIFFC", "FASHION_LIMITS"]
 # ─────────────────────────────────────────────────────────────────────────────
 # CANONICAL COLUMN NAMES  ← always English internally
 # ─────────────────────────────────────────────────────────────────────────────
-# These are the internal schema names used in ALL DataFrames throughout the app.
-# Translation to Arabic happens only at display time.
 C_SYSTEM        = "System"
 C_MODEL         = "Model Code"
 C_PRODUCT       = "Product"
@@ -337,7 +955,6 @@ def get_lang():
     return st.session_state.get("lang", "EN")
 
 def t(en, ar):
-    """UI translation only — never use for DataFrame column names."""
     return ar if get_lang() == "AR" else en
 
 def get_system_name(key):
@@ -348,7 +965,7 @@ def get_dir():
     return "rtl" if get_lang() == "AR" else "ltr"
 
 # ─────────────────────────────────────────────────────────────────────────────
-# COLUMN DISPLAY LABEL MAP  ← translate canonical → UI label
+# COLUMN DISPLAY LABEL MAP
 # ─────────────────────────────────────────────────────────────────────────────
 _COL_LABELS_EN = {
     C_SYSTEM: "System", C_MODEL: "Model Code", C_PRODUCT: "Product",
@@ -376,16 +993,11 @@ _COL_LABELS_AR = {
 }
 
 def col_label(canonical):
-    """Return the UI display label for a canonical column name."""
     if get_lang() == "AR":
         return _COL_LABELS_AR.get(canonical, canonical)
     return _COL_LABELS_EN.get(canonical, canonical)
 
 def df_for_display(df):
-    """
-    Return a copy of df with columns renamed to current UI language for display only.
-    Internal DataFrames always stay in canonical English.
-    """
     if df is None or df.empty:
         return df
     label_map = _COL_LABELS_AR if get_lang() == "AR" else _COL_LABELS_EN
@@ -395,7 +1007,6 @@ def df_for_display(df):
 # SAFE NUMERIC HELPER
 # ─────────────────────────────────────────────────────────────────────────────
 def _to_num(series):
-    """Safely coerce a pandas Series to float, replacing errors/NaN with 0."""
     return pd.to_numeric(series, errors="coerce").fillna(0)
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -428,7 +1039,6 @@ _DEF = {
     "pc_last_code"       : "",
     "salesanalyticsdf"   : None,
     "analytics_view"     : "purchase",
-    # pagination state
     "page_total"         : 0,
     "page_branch"        : 0,
     "page_transfers"     : 0,
@@ -556,13 +1166,12 @@ def parse_invoice_pdf_cached(file_bytes):
     return out
 
 # ─────────────────────────────────────────────────────────────────────────────
-# EXCEL HELPERS  (unchanged from original — write canonical columns to Excel)
+# EXCEL HELPERS
 # ─────────────────────────────────────────────────────────────────────────────
 def _style_worksheet(ws, df_clean, lang="EN"):
     from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
     from openpyxl.utils import get_column_letter
     from openpyxl.formatting.rule import DataBarRule, ColorScaleRule, CellIsRule
-    from openpyxl.chart import BarChart, Reference
     if lang == "AR":
         ws.sheet_view.rightToLeft = True
     hdr_fill     = PatternFill("solid", fgColor="2C3E50")
@@ -588,7 +1197,6 @@ def _style_worksheet(ws, df_clean, lang="EN"):
     col_names = [ws.cell(row=1, column=c).value for c in range(1, max_col + 1)]
     on_hand_col = sale_price_col = loc_col = branch_col = model_col = None
     for i, name in enumerate(col_names, 1):
-        # check both canonical and translated names for robustness
         if name in (C_ON_HAND, "متوفر"):       on_hand_col    = i
         if name in (C_SALE_PRICE, "سعر البيع"): sale_price_col = i
         if name in (C_LOCATION, "الموقع"):      loc_col        = i
@@ -673,13 +1281,11 @@ def _style_worksheet(ws, df_clean, lang="EN"):
             ws.row_dimensions[row_num].height = 28
 
 def _excel_generic(df, sheet_name="Data"):
-    """Generic Excel export using canonical column names."""
     from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
     from openpyxl.utils import get_column_letter
     lang = st.session_state.get("lang", "EN")
     buf  = io.BytesIO()
     clean = df.drop(columns=["_status"], errors="ignore").copy()
-    # translate column headers for display in Excel
     clean = clean.rename(columns={k: v for k, v in
                                    (_COL_LABELS_AR if lang=="AR" else _COL_LABELS_EN).items()
                                    if k in clean.columns})
@@ -723,7 +1329,7 @@ def dl_name(tag, ext):
     return f"swag_{tag}_{datetime.now().strftime('%Y%m%d_%H%M')}.{ext}"
 
 # ─────────────────────────────────────────────────────────────────────────────
-# FETCH ALL DATA (stock comparison — unchanged logic, canonical columns)
+# FETCH ALL DATA
 # ─────────────────────────────────────────────────────────────────────────────
 @st.cache_data(ttl=180, show_spinner=False)
 def fetch_all_data(
@@ -879,15 +1485,10 @@ def fetch_all_data(
     }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# FETCH PURCHASE HISTORY FOR ONE SYSTEM  ← NEW canonical-column version
+# FETCH PURCHASE HISTORY
 # ─────────────────────────────────────────────────────────────────────────────
 @st.cache_data(ttl=1800, show_spinner=False)
 def fetch_purchase_history_for_system(system_key, model_code, date_from, date_to):
-    """
-    Returns a DataFrame with canonical English column names.
-    Columns: System, Date, PO, Vendor, Brand Category, Category,
-             Model Code, Product, Qty, Unit Price, Subtotal
-    """
     empty_cols = [C_SYSTEM, C_DATE, C_PO, C_VENDOR, C_BRAND_CAT, C_CATEGORY,
                   C_MODEL, C_PRODUCT, C_QTY, C_UNIT_PRICE, C_SUBTOTAL]
     empty_df = pd.DataFrame(columns=empty_cols)
@@ -974,25 +1575,16 @@ def fetch_purchase_history_for_system(system_key, model_code, date_from, date_to
         if not rows:
             return empty_df
         df = pd.DataFrame(rows)
-        # keep numeric columns numeric
         for c in [C_QTY, C_UNIT_PRICE, C_SUBTOTAL]:
             df[c] = _to_num(df[c])
-        # stringify text columns
         for c in [col for col in df.columns if col not in [C_QTY, C_UNIT_PRICE, C_SUBTOTAL]]:
             df[c] = df[c].fillna("").astype(str)
         return df.sort_values(by=C_DATE, ascending=False).reset_index(drop=True)
     except Exception:
         return empty_df
 
-# ─────────────────────────────────────────────────────────────────────────────
-# FETCH PURCHASE HISTORY FOR ALL SYSTEMS
-# ─────────────────────────────────────────────────────────────────────────────
 def fetch_all_systems_purchase_history(model_code, date_from, date_to,
                                         system_keys=None, progress_placeholder=None):
-    """
-    Fetch purchase history from all (or specified) systems in parallel.
-    Returns merged DataFrame with canonical columns + System column.
-    """
     keys = system_keys or SYSTEM_KEYS
     results = []
     with ThreadPoolExecutor(max_workers=4) as ex:
@@ -1015,15 +1607,10 @@ def fetch_all_systems_purchase_history(model_code, date_from, date_to,
     return merged.sort_values(by=C_DATE, ascending=False).reset_index(drop=True)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# FETCH SALES HISTORY FOR ONE SYSTEM  ← NEW canonical-column version
+# FETCH SALES HISTORY
 # ─────────────────────────────────────────────────────────────────────────────
 @st.cache_data(ttl=1800, show_spinner=False)
 def fetch_sales_history_for_system(system_key, model_code, date_from, date_to):
-    """
-    Returns a DataFrame with canonical English column names.
-    Columns: System, Date, SO, Customer, Brand Category, Category,
-             Model Code, Product, Qty, Unit Price, Subtotal
-    """
     empty_cols = [C_SYSTEM, C_DATE, C_SO, C_CUSTOMER, C_BRAND_CAT, C_CATEGORY,
                   C_MODEL, C_PRODUCT, C_QTY, C_UNIT_PRICE, C_SUBTOTAL]
     empty_df = pd.DataFrame(columns=empty_cols)
@@ -1118,15 +1705,7 @@ def fetch_sales_history_for_system(system_key, model_code, date_from, date_to):
     except Exception:
         return empty_df
 
-# ─────────────────────────────────────────────────────────────────────────────
-# FETCH SALES HISTORY FOR ALL SYSTEMS
-# ─────────────────────────────────────────────────────────────────────────────
-def fetch_all_systems_sales_history(model_code, date_from, date_to,
-                                     system_keys=None):
-    """
-    Fetch sales history from all (or specified) systems in parallel.
-    Returns merged DataFrame with canonical columns + System column.
-    """
+def fetch_all_systems_sales_history(model_code, date_from, date_to, system_keys=None):
     keys = system_keys or SYSTEM_KEYS
     results = []
     with ThreadPoolExecutor(max_workers=4) as ex:
@@ -1148,9 +1727,6 @@ def fetch_all_systems_sales_history(model_code, date_from, date_to,
         merged[c] = _to_num(merged[c])
     return merged.sort_values(by=C_DATE, ascending=False).reset_index(drop=True)
 
-# ─────────────────────────────────────────────────────────────────────────────
-# KEEP OLD FETCH NAMES AS ALIASES (backward compat)
-# ─────────────────────────────────────────────────────────────────────────────
 def fetch_swag_purchase_history(model_code, date_from, date_to):
     return fetch_purchase_history_for_system("SWAG", model_code, date_from, date_to)
 
@@ -1198,25 +1774,18 @@ def get_qty_display(qty, lang="EN"):
 # PAGINATION HELPER
 # ─────────────────────────────────────────────────────────────────────────────
 def paginate_df(df, page_key, page_size=PAGE_SIZE):
-    """
-    Returns the current page slice of df.
-    Renders Previous/Next buttons and page indicator.
-    page_key: unique string for session state (e.g. "page_total")
-    """
     total_rows = len(df)
     if total_rows == 0:
         return df
     total_pages = max(1, (total_rows + page_size - 1) // page_size)
     if page_key not in st.session_state:
         st.session_state[page_key] = 0
-    # Clamp page index
     st.session_state[page_key] = min(st.session_state[page_key], total_pages - 1)
     st.session_state[page_key] = max(0, st.session_state[page_key])
     current_page = st.session_state[page_key]
     start = current_page * page_size
     end   = min(start + page_size, total_rows)
     page_df = df.iloc[start:end]
-    # Pagination controls
     pc1, pc2, pc3, pc4, pc5 = st.columns([1, 1, 2, 1, 1])
     with pc1:
         if st.button(f"⏮ {t('First','الأول')}", key=f"{page_key}_first",
@@ -1232,7 +1801,7 @@ def paginate_df(df, page_key, page_size=PAGE_SIZE):
             f"<span class='page-info'>"
             f"{t('Page','صفحة')} {current_page+1} / {total_pages}"
             f"</span>"
-            f"<span style='color:#8e9aaf;font-size:0.8rem;'>"
+            f"<span style='color:#4a6880;font-size:0.75rem;'>"
             f"({start+1}–{end} {t('of','من')} {total_rows:,} {t('rows','صف')})"
             f"</span>"
             f"</div>", unsafe_allow_html=True)
@@ -1247,18 +1816,13 @@ def paginate_df(df, page_key, page_size=PAGE_SIZE):
     return page_df
 
 # ─────────────────────────────────────────────────────────────────────────────
-# PREMIUM TABLE RENDERER  ← now receives already-translated display df
+# PREMIUM TABLE RENDERER
 # ─────────────────────────────────────────────────────────────────────────────
 def render_premium_table(df_show, first_col_accent=True, page_key=None, page_size=PAGE_SIZE):
-    """
-    Render a styled HTML table.
-    df_show: DataFrame with display-language column names (use df_for_display() before calling).
-    page_key: if provided, pagination is applied.
-    """
     if df_show is None or df_show.empty:
-        st.info(t("No data available.", "لا توجد بيانات متاحة."))
+        st.markdown("<div class='info-banner'>ℹ️ " + t("No data available.", "لا توجد بيانات متاحة.") + "</div>",
+                    unsafe_allow_html=True)
         return
-    # Apply pagination if requested
     if page_key:
         df_show = paginate_df(df_show, page_key, page_size)
     cols     = df_show.columns.tolist()
@@ -1279,36 +1843,29 @@ def render_premium_table(df_show, first_col_accent=True, page_key=None, page_siz
             <tbody>{tbody_html}</tbody>
         </table>
     </div>
-    <style>
-    .premium-table td.accent-cell {{ font-weight:700; color:#3498db; }}
-    </style>
     """, unsafe_allow_html=True)
     if not page_key:
-        st.caption(f"📊 {len(df_show)} {t('rows','صفوف')}")
+        st.caption(f"📊 {len(df_show):,} {t('rows','صفوف')}")
 
 # ─────────────────────────────────────────────────────────────────────────────
-# DISPLAY DF  ← works on canonical-column DataFrames
+# DISPLAY DF
 # ─────────────────────────────────────────────────────────────────────────────
 def display_df(df, thresh=0, table_key="tbl"):
-    """
-    Main table display with filters, sorting, search, and pagination.
-    Input df must have canonical English column names.
-    """
     if df is None or df.empty:
-        st.info(t("No data.", "لا بيانات.")); return
+        st.markdown("<div class='info-banner'>ℹ️ " + t("No data.", "لا بيانات.") + "</div>",
+                    unsafe_allow_html=True)
+        return
     work = df.copy()
     fc = st.columns([2,2,2,1.5])
     has_sys = C_SYSTEM in work.columns
     has_br  = C_BRANCH in work.columns
     if has_sys:
         all_sys = sorted(work[C_SYSTEM].dropna().unique().tolist())
-        # show display names
         sys_display = {k: get_system_name(k) for k in all_sys}
         sys_opts    = [sys_display.get(k, k) for k in all_sys]
         with fc[0]:
             sel_sys_disp = st.multiselect(f"🏢 {t('Company','الشركة')}", options=sys_opts,
                                           default=sys_opts, key=f"{table_key}_sys")
-        # map back to keys
         disp_to_key = {v: k for k, v in sys_display.items()}
         sel_sys = [disp_to_key.get(d, d) for d in sel_sys_disp]
         if sel_sys: work = work[work[C_SYSTEM].isin(sel_sys)]
@@ -1343,7 +1900,9 @@ def display_df(df, thresh=0, table_key="tbl"):
         except Exception:
             work = work.sort_values(by=sort_by)
     if work.empty:
-        st.warning(t("⚠️ No rows match your filters.","لا توجد نتائج بعد الفلتر.")); return
+        st.markdown("<div class='warn-banner'>⚠️ " + t("No rows match your filters.", "لا توجد نتائج بعد الفلتر.") + "</div>",
+                    unsafe_allow_html=True)
+        return
     if C_ON_HAND in work.columns:
         raw_q = _to_num(work[C_ON_HAND])
         mn, mx = int(raw_q.min() or 0), int(raw_q.max() or 0)
@@ -1363,7 +1922,6 @@ def display_df(df, thresh=0, table_key="tbl"):
                    f"{vp[vp>0].mean():.2f} SAR" if not vp[vp>0].empty else "—")
     if has_sys:
         sm4.metric(t("Companies","الشركات"), ok_work[C_SYSTEM].nunique() if C_SYSTEM in ok_work.columns else 0)
-    # Prepare display copy (translate columns, format values)
     show = work.drop(columns=["_status"], errors="ignore").copy()
     if C_SALE_PRICE in show.columns:
         show[C_SALE_PRICE] = _to_num(show[C_SALE_PRICE]).map(lambda v: f"{v:.2f} SAR" if v else "—")
@@ -1371,10 +1929,8 @@ def display_df(df, thresh=0, table_key="tbl"):
         _lang = get_lang()
         show[C_ON_HAND] = _to_num(work[C_ON_HAND] if C_ON_HAND in work.columns else show[C_ON_HAND]).map(
             lambda v: get_qty_display(v, _lang))
-    # Translate System key → display name
     if C_SYSTEM in show.columns:
         show[C_SYSTEM] = show[C_SYSTEM].map(lambda k: get_system_name(k) if k in SYSTEM_KEYS else k)
-    # Translate column headers
     show = df_for_display(show)
     render_premium_table(show, page_key=f"page_{table_key}")
 
@@ -1382,57 +1938,125 @@ def display_df(df, thresh=0, table_key="tbl"):
 # LOGIN
 # ─────────────────────────────────────────────────────────────────────────────
 def show_login():
-    _,_,lc = st.columns([2,1,0.5])
-    with lc:
-        lg = st.radio("",["EN","AR"],horizontal=True,
-                      index=0 if get_lang()=="EN" else 1,
-                      label_visibility="collapsed",key="llr")
-        if lg!=get_lang(): st.session_state.lang=lg; st.rerun()
-    _,col,_ = st.columns([1,1.1,1])
-    with col:
-        st.markdown("""
-        <div style='display:flex;flex-direction:column;align-items:center;padding:20px 0 8px;'>
-            <div class='login-orb'>📊</div>
-            <div class='login-title'>SWAG Dashboard</div>
-            <div class='login-subtitle'>Real-time Stock &amp; Price · 4 Odoo Systems</div>
-        </div>""", unsafe_allow_html=True)
-        wm = t("🌙 Welcome — Sign in to continue","🌙 مرحباً بك — سجّل دخولك للمتابعة")
-        st.markdown(f"<div class='info-banner'>{wm}</div>", unsafe_allow_html=True)
-        st.markdown("<div class='login-card'>", unsafe_allow_html=True)
+    # Language toggle at top right
+    lang_col1, lang_col2, lang_col3 = st.columns([4, 1, 0.5])
+    with lang_col3:
+        lg = st.radio("", ["EN", "AR"], horizontal=True,
+                      index=0 if get_lang() == "EN" else 1,
+                      label_visibility="collapsed", key="llr")
+        if lg != get_lang():
+            st.session_state.lang = lg
+            st.rerun()
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    left_col, spacer, right_col = st.columns([1.15, 0.15, 0.85])
+
+    with left_col:
+        st.markdown(f"""
+        <div class="login-left">
+            <div class="login-hero-badge">
+                SWAG INTELLIGENCE PLATFORM
+            </div>
+            <div class="login-hero-title">
+                {t('Real-Time', 'لحظي')} <span>{t('Stock & Sales', 'مخزون ومبيعات')}</span><br>
+                {t('Intelligence', 'بيانات ذكية')}
+            </div>
+            <div class="login-hero-sub">
+                {t('Unified analytics across 4 Odoo systems. Track inventory, purchase orders, sales performance, and reorder signals — all in one place.',
+                   'تحليلات موحدة عبر 4 أنظمة أودو. تتبع المخزون وأوامر الشراء وأداء المبيعات وإشارات إعادة الطلب — كل ذلك في مكان واحد.')}
+            </div>
+            <div class="login-feature-chips">
+                <span class="login-chip">📦 {t('Live Inventory', 'مخزون مباشر')}</span>
+                <span class="login-chip">💰 {t('Sales Analytics', 'تحليل المبيعات')}</span>
+                <span class="login-chip">🛒 {t('Purchase Tracking', 'تتبع المشتريات')}</span>
+                <span class="login-chip">🔄 {t('Reorder Engine', 'محرك إعادة الطلب')}</span>
+                <span class="login-chip">📄 {t('PDF Invoice Scan', 'مسح الفواتير')}</span>
+                <span class="login-chip">🌐 {t('Bilingual EN/AR', 'ثنائي اللغة')}</span>
+            </div>
+            <div style="margin-bottom:14px; font-size:0.72rem; text-transform:uppercase; letter-spacing:1px; color:#3a5a7a; font-weight:700;">
+                {t('Connected Systems', 'الأنظمة المتصلة')}
+            </div>
+            <div class="login-systems-grid">
+        """, unsafe_allow_html=True)
+
+        for key in SYSTEM_KEYS:
+            name = get_system_name(key)
+            st.markdown(f"""
+            <div class="login-sys-card">
+                <div class="login-sys-dot"></div>
+                <div>
+                    <div class="login-sys-name">{name}</div>
+                    <div class="login-sys-label">Odoo ERP</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown("</div></div>", unsafe_allow_html=True)
+
+    with right_col:
+        st.markdown(f"""
+        <div class="login-card-wrapper">
+            <div class="login-card-icon">📊</div>
+            <div class="login-card-title">{t('Welcome Back', 'مرحباً بعودتك')}</div>
+            <div class="login-card-sub">{t('Sign in to access your dashboard', 'سجّل دخولك للوصول إلى لوحة التحكم')}</div>
+            <div class="login-divider"></div>
+        </div>
+        """, unsafe_allow_html=True)
+
         with st.form("lf", clear_on_submit=False):
-            em  = st.text_input(t("📧 Email","📧 البريد الإلكتروني"), placeholder="you@swag.com.sa")
-            pw  = st.text_input(t("🔑 Password","🔑 كلمة المرور"), type="password", placeholder="••••••••")
+            st.markdown(f"<p style='font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#4a6880;margin-bottom:6px;'>📧 {t('Email Address','البريد الإلكتروني')}</p>", unsafe_allow_html=True)
+            em = st.text_input("", placeholder="you@swag.com.sa", label_visibility="collapsed")
+
+            st.markdown(f"<p style='font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#4a6880;margin-bottom:6px;margin-top:14px;'>🔑 {t('Password','كلمة المرور')}</p>", unsafe_allow_html=True)
+            pw = st.text_input("", type="password", placeholder="••••••••", label_visibility="collapsed")
+
             st.markdown("<br>", unsafe_allow_html=True)
-            sub = st.form_submit_button(t("🚀 Sign In","🚀 تسجيل الدخول"),
-                                        use_container_width=True, type="primary")
-        st.markdown("</div>", unsafe_allow_html=True)
+            sub = st.form_submit_button(
+                f"{'→' if get_lang()=='EN' else '←'}  {t('Sign In to Dashboard', 'تسجيل الدخول')}",
+                use_container_width=True, type="primary")
+
         if sub:
             if not em or not pw:
-                st.error(t("Fill in both fields.","يرجى ملء جميع الحقول.")); return
-            if "LOGIN" not in st.secrets:
-                st.error("❌ [LOGIN] section missing in secrets.toml"); return
-            cfg = st.secrets["LOGIN"]
-            if "url" not in cfg or "db" not in cfg:
-                st.error("❌ LOGIN.url or LOGIN.db missing in secrets.toml"); return
-            with st.spinner(t("⚡ Signing in…","⚡ جارٍ تسجيل الدخول…")):
-                try:
-                    proxy = xmlrpc.client.ServerProxy(f"{cfg['url']}/xmlrpc/2/common", allow_none=True)
-                    uid   = proxy.authenticate(cfg["db"], em, pw, {})
-                    if uid:
-                        token = _make_token(em)
-                        st.query_params["u"] = em
-                        st.query_params["t"] = token
-                        st.session_state.authenticated = True
-                        st.session_state.user_email    = em
-                        time.sleep(0.3); st.balloons(); st.rerun()
-                    else:
-                        st.error(t("❌ Wrong email or password.","❌ بريد إلكتروني أو كلمة مرور خاطئة."))
-                except Exception as e:
-                    st.error(f"❌ Connection error: {e}")
-        st.markdown("""
-        <div class='footer' style='margin-top:24px;'>
-        © 2025 SWAG Fashion · Powered by Odoo · Built with ❤️
-        </div>""", unsafe_allow_html=True)
+                st.markdown(f"<div class='alert-banner'>⚠️ {t('Please fill in both fields.', 'يرجى ملء جميع الحقول.')}</div>", unsafe_allow_html=True)
+            elif "LOGIN" not in st.secrets:
+                st.markdown("<div class='alert-banner'>❌ [LOGIN] section missing in secrets.toml</div>", unsafe_allow_html=True)
+            else:
+                cfg = st.secrets["LOGIN"]
+                if "url" not in cfg or "db" not in cfg:
+                    st.markdown("<div class='alert-banner'>❌ LOGIN.url or LOGIN.db missing in secrets.toml</div>", unsafe_allow_html=True)
+                else:
+                    with st.spinner(t("⚡ Authenticating…", "⚡ جارٍ التحقق…")):
+                        try:
+                            proxy = xmlrpc.client.ServerProxy(f"{cfg['url']}/xmlrpc/2/common", allow_none=True)
+                            uid   = proxy.authenticate(cfg["db"], em, pw, {})
+                            if uid:
+                                token = _make_token(em)
+                                st.query_params["u"] = em
+                                st.query_params["t"] = token
+                                st.session_state.authenticated = True
+                                st.session_state.user_email    = em
+                                time.sleep(0.3)
+                                st.balloons()
+                                st.rerun()
+                            else:
+                                st.markdown(f"<div class='alert-banner'>❌ {t('Wrong email or password.', 'بريد إلكتروني أو كلمة مرور خاطئة.')}</div>", unsafe_allow_html=True)
+                        except Exception as e:
+                            st.markdown(f"<div class='alert-banner'>❌ Connection error: {e}</div>", unsafe_allow_html=True)
+
+        st.markdown(f"""
+        <div style='text-align:center;margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.05);'>
+            <span style='font-size:0.65rem;color:#2a3a4a;'>
+                🔒 {t('Secured via Odoo Authentication', 'مُؤمَّن عبر مصادقة أودو')}
+            </span>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class='footer' style='margin-top:48px;'>
+        © 2025 <span>SWAG Fashion</span> · Powered by <span>Odoo ERP</span> · Built with ❤️
+    </div>
+    """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # LOGOUT
@@ -1448,8 +2072,9 @@ def do_logout():
 # PREMIUM KPI HELPERS
 # ─────────────────────────────────────────────────────────────────────────────
 def _premium_kpi_card(icon, value, label, trend=""):
-    trend_html = f"<div class='kpi-trend'>{trend}</div>" if trend else ""
+    trend_html = f"<div class='kpi-trend'>↑ {trend}</div>" if trend else ""
     return (f"<div class='kpi-card'>"
+            f"<div class='kpi-card-bg'></div>"
             f"<span class='kpi-icon'>{icon}</span>"
             f"<div class='kpi-value'>{value}</div>"
             f"<div class='kpi-label'>{label}</div>"
@@ -1458,15 +2083,30 @@ def _premium_kpi_card(icon, value, label, trend=""):
 def _render_kpi_grid(cards):
     st.markdown(f"<div class='kpi-grid'>{''.join(cards)}</div>", unsafe_allow_html=True)
 
-def _section_header(title, icon="📊"):
-    st.markdown(f"<div class='section-header'>{icon} {title}</div>", unsafe_allow_html=True)
+def _section_header(title, icon="📊", subtitle=""):
+    sub_html = f"<div class='section-header-sub'>{subtitle}</div>" if subtitle else ""
+    st.markdown(f"""
+    <div class='section-header'>
+        <div class='section-header-bar'></div>
+        <div class='section-header-content'>
+            <div class='section-header-title'>{icon} {title}</div>
+            {sub_html}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 def _chart_card_open(title, icon="📈"):
-    st.markdown(f"<div class='chart-card'><div class='chart-title'>"
-                f"<span class='accent'></span>{icon} {title}</div>", unsafe_allow_html=True)
+    st.markdown(f"""<div class='chart-card'>
+        <div class='chart-title'>
+            <span class='chart-title-accent'></span>
+            {icon} {title}
+        </div>""", unsafe_allow_html=True)
 
 def _chart_card_close():
     st.markdown("</div>", unsafe_allow_html=True)
+
+def _divider():
+    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # ALTAIR HELPERS
@@ -1475,14 +2115,16 @@ _ALT_CONFIG = {
     "background": "transparent",
     "view": {"stroke": "transparent"},
     "axis": {
-        "labelColor": "#8e9aaf", "titleColor": "#e8edf2",
-        "gridColor": "rgba(255,255,255,0.1)",
-        "domainColor": "rgba(52,152,219,0.3)",
-        "tickColor": "rgba(52,152,219,0.3)",
-        "labelFontSize": 11, "titleFontSize": 12,
+        "labelColor": "#6b8ab0", "titleColor": "#c8d6e8",
+        "gridColor": "rgba(255,255,255,0.05)",
+        "domainColor": "rgba(52,152,219,0.2)",
+        "tickColor": "rgba(52,152,219,0.2)",
+        "labelFontSize": 10, "titleFontSize": 11,
+        "labelFont": "Inter", "titleFont": "Inter",
     },
-    "legend": {"labelColor": "#8e9aaf", "titleColor": "#e8edf2"},
-    "title": {"color": "#e8edf2"},
+    "legend": {"labelColor": "#6b8ab0", "titleColor": "#c8d6e8",
+               "labelFont": "Inter", "titleFont": "Inter"},
+    "title": {"color": "#c8d6e8", "font": "Inter"},
 }
 _PALETTE = ["#3498db","#2ecc71","#e74c3c","#f1c40f","#9b59b6","#1abc9c","#e67e22","#34495e"]
 
@@ -1493,7 +2135,7 @@ def _alt_bar_chart(df, x_field, y_field, tooltip_fmt=",.0f", color="#3498db",
     plot_df[tooltip_label] = _to_num(plot_df[y_field]).map(lambda v: f"{v:{tooltip_fmt}}")
     chart = (
         alt.Chart(plot_df)
-        .mark_bar(cornerRadiusTopLeft=8, cornerRadiusTopRight=8, opacity=0.9)
+        .mark_bar(cornerRadiusTopLeft=6, cornerRadiusTopRight=6, opacity=0.85)
         .encode(
             x=alt.X(f"{x_field}:N", sort=sort_order,
                     axis=alt.Axis(labelAngle=label_angle, labelLimit=130), title=None),
@@ -1517,9 +2159,9 @@ def _alt_line_chart(df, x_field, y_field, height=260, color="#3498db"):
                 y=alt.Y(f"{y_field}:Q", title=y_field),
                 tooltip=[alt.Tooltip(f"{x_field}:T", title=t("Date","التاريخ"), format="%Y-%m-%d"),
                          alt.Tooltip(f"{y_field}:Q", title=y_field, format=",.0f")]))
-    area  = (alt.Chart(df).mark_area(color=color, opacity=0.12, interpolate="monotone")
+    area  = (alt.Chart(df).mark_area(color=color, opacity=0.08, interpolate="monotone")
              .encode(x=alt.X(f"{x_field}:T"), y=alt.Y(f"{y_field}:Q")))
-    points = (alt.Chart(df).mark_circle(color="#2ecc71", size=55, opacity=0.9)
+    points = (alt.Chart(df).mark_circle(color="#2ecc71", size=50, opacity=0.9)
               .encode(
                   x=alt.X(f"{x_field}:T"), y=alt.Y(f"{y_field}:Q"),
                   tooltip=[alt.Tooltip(f"{x_field}:T", title=t("Date","التاريخ"), format="%Y-%m-%d"),
@@ -1527,12 +2169,10 @@ def _alt_line_chart(df, x_field, y_field, height=260, color="#3498db"):
     return ((area + line + points).properties(height=height).configure(**_ALT_CONFIG).interactive())
 
 def _top10_altair(title, group_col, value_col, df, color="#3498db", tooltip_fmt=",.0f"):
-    """
-    group_col and value_col are CANONICAL column names.
-    Translates only for display labels.
-    """
     if df is None or df.empty or group_col not in df.columns or value_col not in df.columns:
-        st.info(t("No data available.","لا توجد بيانات.")); return
+        st.markdown(f"<div class='info-banner'>ℹ️ {t('No data available.','لا توجد بيانات.')}</div>",
+                    unsafe_allow_html=True)
+        return
     grp = (
         df.copy()
         .assign(**{group_col: df[group_col].replace("", f"({group_col} N/A)").fillna(f"({group_col} N/A)")})
@@ -1543,7 +2183,9 @@ def _top10_altair(title, group_col, value_col, df, color="#3498db", tooltip_fmt=
     )
     grp[value_col] = _to_num(grp[value_col])
     if grp.empty:
-        st.info(t("No data.","لا توجد بيانات.")); return
+        st.markdown(f"<div class='info-banner'>ℹ️ {t('No data.','لا توجد بيانات.')}</div>",
+                    unsafe_allow_html=True)
+        return
     display_label = col_label(value_col) + " (Total)"
     grp[display_label] = grp[value_col].map(lambda v: f"{v:{tooltip_fmt}}")
     _chart_card_open(title, "")
@@ -1563,7 +2205,9 @@ def _top10_altair(title, group_col, value_col, df, color="#3498db", tooltip_fmt=
 # ─────────────────────────────────────────────────────────────────────────────
 def _plotly_donut(labels, values, title="", height=360):
     if not _HAS_PLOTLY:
-        st.info(t("Install plotly for donut charts.","قم بتثبيت plotly للرسوم الدائرية.")); return
+        st.markdown(f"<div class='info-banner'>ℹ️ {t('Install plotly for donut charts.','قم بتثبيت plotly للرسوم الدائرية.')}</div>",
+                    unsafe_allow_html=True)
+        return
     clean_pairs = []
     for lbl, val in zip(labels, values):
         try:
@@ -1573,38 +2217,43 @@ def _plotly_donut(labels, values, title="", height=360):
         except (TypeError, ValueError):
             continue
     if not clean_pairs:
-        st.info(t("No data for chart.","لا بيانات للرسم.")); return
+        st.markdown(f"<div class='info-banner'>ℹ️ {t('No data for chart.','لا بيانات للرسم.')}</div>",
+                    unsafe_allow_html=True)
+        return
     clean_labels = [p[0] for p in clean_pairs]
     clean_values = [p[1] for p in clean_pairs]
     _colors = ["#3498db","#2ecc71","#e74c3c","#f1c40f","#9b59b6","#1abc9c","#e67e22","#34495e"]
     used_colors = (_colors * ((len(clean_labels)//len(_colors))+1))[:len(clean_labels)]
     try:
         fig = go.Figure(data=[go.Pie(
-            labels=clean_labels, values=clean_values, hole=0.55,
-            marker=dict(colors=used_colors, line=dict(color="#0a0c10", width=2)),
+            labels=clean_labels, values=clean_values, hole=0.6,
+            marker=dict(colors=used_colors, line=dict(color="#05070d", width=2)),
             textinfo="percent+label",
-            textfont=dict(color="#e8edf2", size=11),
+            textfont=dict(color="#c8d6e8", size=10, family="Inter"),
             hovertemplate="<b>%{label}</b><br>" + t("Value","القيمة") +
                           ": %{value:,.0f}<br>" + t("Share","الحصة") + ": %{percent}<extra></extra>",
             sort=True, direction="clockwise")])
         fig.update_layout(
-            title_text=title, title_x=0.5, title_font_color="#e8edf2", title_font_size=13,
+            title_text=title, title_x=0.5,
+            title_font=dict(color="#c8d6e8", size=13, family="Inter"),
             paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
             height=height, margin=dict(t=52,b=20,l=10,r=10),
-            legend=dict(font=dict(color="#8e9aaf",size=10),
-                        bgcolor="rgba(20,24,30,0.75)",
-                        bordercolor="rgba(52,152,219,0.3)", borderwidth=1, orientation="v"),
+            legend=dict(font=dict(color="#6b8ab0", size=9, family="Inter"),
+                        bgcolor="rgba(10,13,20,0.7)",
+                        bordercolor="rgba(52,152,219,0.2)", borderwidth=1, orientation="v"),
             showlegend=True)
         st.plotly_chart(fig, use_container_width=True)
     except Exception as exc:
         st.warning(f"Chart render error: {exc}")
 
 # ─────────────────────────────────────────────────────────────────────────────
-# PURCHASE KPI ROW  (uses canonical column names)
+# PURCHASE KPI ROW
 # ─────────────────────────────────────────────────────────────────────────────
 def _po_kpi_row(df, prefix=""):
     if df is None or df.empty:
-        st.info(t("No purchase data available.","لا توجد بيانات مشتريات متاحة.")); return
+        st.markdown(f"<div class='info-banner'>ℹ️ {t('No purchase data available.','لا توجد بيانات مشتريات متاحة.')}</div>",
+                    unsafe_allow_html=True)
+        return
     total_qty  = float(_to_num(df[C_QTY]).sum())      if C_QTY      in df.columns else 0.0
     total_amt  = float(_to_num(df[C_SUBTOTAL]).sum())  if C_SUBTOTAL in df.columns else 0.0
     n_vendors  = int(df[C_VENDOR].nunique())            if C_VENDOR   in df.columns else 0
@@ -1642,7 +2291,7 @@ def _po_download_row(df, tag_suffix=""):
                         use_container_width=True, key=f"dl_xlsx_{tag_suffix}_{id(df)}")
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SALES KPI ROW  (uses canonical column names)
+# SALES KPI ROW
 # ─────────────────────────────────────────────────────────────────────────────
 def _sales_kpi_row(df):
     total_qty   = float(_to_num(df[C_QTY]).sum())      if C_QTY       in df.columns else 0.0
@@ -1667,9 +2316,6 @@ def _sales_kpi_row(df):
     ]
     _render_kpi_grid(cards)
 
-# ─────────────────────────────────────────────────────────────────────────────
-# SALES FULL TABLE HELPER
-# ─────────────────────────────────────────────────────────────────────────────
 def _sales_full_table(df, page_key=None):
     show = df.copy()
     if C_UNIT_PRICE in show.columns:
@@ -1684,10 +2330,11 @@ def _sales_full_table(df, page_key=None):
     render_premium_table(show, page_key=page_key)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SALES ANALYTICS VIEW  ← all canonical columns, all 4 systems
+# SALES ANALYTICS VIEW
 # ─────────────────────────────────────────────────────────────────────────────
 def show_sales_analytics():
-    _section_header(t("Sales Analytics — All Systems","تحليلات المبيعات — كل الأنظمة"), "💰")
+    _section_header(t("Sales Analytics — All Systems","تحليلات المبيعات — كل الأنظمة"), "💰",
+                    t("Sales orders from all configured Odoo systems","أوامر البيع من جميع الأنظمة المُعدَّة"))
     st.markdown("<div class='info-banner'>📌 " +
                 t("Sales orders from <b>all configured systems</b> (state: sale / done). "
                   "Use the System filter to narrow down.",
@@ -1709,12 +2356,10 @@ def show_sales_analytics():
     with sf3:
         sa_date_to   = st.date_input(f"📅 {t('To','إلى')}",  value=default_to,   key="sa_date_to")
     with sf4:
-        # System filter
         sys_display_names = [get_system_name(k) for k in SYSTEM_KEYS]
         sa_system_sel = st.multiselect(
             f"🏢 {t('System','النظام')}", options=sys_display_names, default=sys_display_names,
             key="sa_system_sel")
-        # map display → key
         _disp2key_s = {get_system_name(k): k for k in SYSTEM_KEYS}
         selected_system_keys_s = [_disp2key_s.get(d, d) for d in sa_system_sel] or SYSTEM_KEYS
     with sf5:
@@ -1740,37 +2385,35 @@ def show_sales_analytics():
 
     sa_full = st.session_state.get("salesanalyticsdf")
     if sa_full is None:
-        st.info(t("👆 Set your date range and click **Fetch Sales Analytics** to load data.",
-                  "👆 حدد نطاق التاريخ واضغط **جلب تحليلات المبيعات** لتحميل البيانات.")); return
+        st.markdown(f"<div class='info-banner'>👆 {t('Set your date range and click Fetch Sales Analytics to load data.','حدد نطاق التاريخ واضغط جلب تحليلات المبيعات لتحميل البيانات.')}</div>",
+                    unsafe_allow_html=True)
+        return
     if sa_full.empty:
-        st.info(t("No sales found for this period.","لا توجد مبيعات لهذه الفترة.")); return
+        st.markdown(f"<div class='info-banner'>ℹ️ {t('No sales found for this period.','لا توجد مبيعات لهذه الفترة.')}</div>",
+                    unsafe_allow_html=True)
+        return
 
-    # Ensure numeric — always on canonical columns
     for nc in [C_QTY, C_UNIT_PRICE, C_SUBTOTAL]:
         if nc in sa_full.columns:
             sa_full[nc] = _to_num(sa_full[nc])
 
-    # Apply system filter on canonical C_SYSTEM
     if C_SYSTEM in sa_full.columns:
         sa_df = sa_full[sa_full[C_SYSTEM].isin(selected_system_keys_s)].copy()
     else:
         sa_df = sa_full.copy()
 
-    # Apply customer filter
     if sa_customer_sel and C_CUSTOMER in sa_df.columns:
         sa_df = sa_df[sa_df[C_CUSTOMER].isin(sa_customer_sel)].copy()
 
-    # Apply model filter
     sa_df_model = None
     if sa_model_input and C_MODEL in sa_df.columns:
         sa_df_model = sa_df[sa_df[C_MODEL].str.upper() == sa_model_input.upper()].copy()
 
-    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    _divider()
     _section_header(t("Sales KPIs","مؤشرات المبيعات"), "📊")
     _sales_kpi_row(sa_df)
 
-    # Top 10 products by qty
-    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    _divider()
     _section_header(t("Top 10 Analytics","أفضل 10 تحليلات"), "🏆")
 
     prod_qty_grp = (
@@ -1796,9 +2439,8 @@ def show_sales_analytics():
         render_premium_table(disp_pq)
     _chart_card_close()
 
-    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    _divider()
 
-    # Top 10 by amount
     prod_amt_grp = (
         sa_df.assign(**{C_MODEL: sa_df[C_MODEL].replace("","(No Code)").fillna("(No Code)")})
         .groupby([C_MODEL, C_PRODUCT], as_index=False)[C_SUBTOTAL]
@@ -1822,9 +2464,8 @@ def show_sales_analytics():
         render_premium_table(disp_pa)
     _chart_card_close()
 
-    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    _divider()
 
-    # Top 10 by system
     sys_grp = (
         sa_df.assign(**{C_SYSTEM: sa_df[C_SYSTEM].map(lambda k: get_system_name(k) if k in SYSTEM_KEYS else k)})
         .groupby(C_SYSTEM, as_index=False)[C_SUBTOTAL].sum()
@@ -1844,15 +2485,14 @@ def show_sales_analytics():
         render_premium_table(disp_sg)
     _chart_card_close()
 
-    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    _divider()
     _top10_altair(t("Top 10 Brand Categories by Qty","أعلى 10 فئات علامة تجارية حسب الكمية"),
                   C_BRAND_CAT, C_QTY, sa_df, color="#9b59b6")
-    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    _divider()
     _top10_altair(t("Top 10 Categories by Qty","أعلى 10 فئات حسب الكمية"),
                   C_CATEGORY, C_QTY, sa_df, color="#e74c3c")
-    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    _divider()
 
-    # Top customers
     cust_grp = (
         sa_df.assign(**{C_CUSTOMER: sa_df[C_CUSTOMER].replace("","(No Customer)").fillna("(No Customer)")})
         .groupby(C_CUSTOMER, as_index=False)[C_SUBTOTAL]
@@ -1876,8 +2516,7 @@ def show_sales_analytics():
         render_premium_table(disp_cg)
     _chart_card_close()
 
-    # Donut share analysis
-    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    _divider()
     _section_header(t("Sales Share Analysis","تحليل حصص المبيعات"), "🥧")
     pie1,pie2,pie3 = st.columns(3)
 
@@ -1908,8 +2547,7 @@ def show_sales_analytics():
             if others_v > 0: p_labels.append("Others"); p_vals.append(others_v)
             _plotly_donut(p_labels, p_vals, title=t("Customer Share (Top 10)","حصة العملاء (أعلى 10)"))
 
-    # Time series
-    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    _divider()
     _section_header(t("Sales Trend Over Time","اتجاه المبيعات عبر الزمن"), "📈")
     ts_col1,ts_col2 = st.columns(2)
 
@@ -1937,16 +2575,15 @@ def show_sales_analytics():
                             use_container_width=True)
         _chart_card_close()
 
-    # Single model detail
-    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    _divider()
     _section_header(t("Single Model Sales Detail","تفاصيل مبيعات موديل واحد"), "🔍")
 
     if not sa_model_input:
-        st.info(t("💡 Enter a **Model Code** in the filter above to see single-model sales analytics.",
-                  "💡 أدخل **رمز الموديل** في الفلتر أعلاه لعرض تحليلات موديل واحد."))
+        st.markdown(f"<div class='info-banner'>💡 {t('Enter a Model Code in the filter above to see single-model sales analytics.','أدخل رمز الموديل في الفلتر أعلاه لعرض تحليلات موديل واحد.')}</div>",
+                    unsafe_allow_html=True)
     elif sa_df_model is not None and sa_df_model.empty:
-        st.info(t(f"No sales records found for model **{sa_model_input}**.",
-                  f"لا توجد سجلات مبيعات للموديل **{sa_model_input}**."))
+        st.markdown(f"<div class='info-banner'>ℹ️ {t(f'No sales records found for model {sa_model_input}.', f'لا توجد سجلات مبيعات للموديل {sa_model_input}.')}</div>",
+                    unsafe_allow_html=True)
     elif sa_df_model is not None:
         sm_qty  = float(_to_num(sa_df_model[C_QTY]).sum())
         sm_amt  = float(_to_num(sa_df_model[C_SUBTOTAL]).sum())
@@ -1958,7 +2595,7 @@ def show_sales_analytics():
         ]
         _render_kpi_grid(sm_cards)
 
-        st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+        _divider()
         _chart_card_open(f"{t('Sales Qty Over Time','كمية المبيعات عبر الزمن')} — {sa_model_input}", "📈")
         sm_ts = (sa_df_model.assign(Date=pd.to_datetime(sa_df_model[C_DATE], errors="coerce"))
                  .dropna(subset=["Date"])
@@ -1970,7 +2607,7 @@ def show_sales_analytics():
                             use_container_width=True)
         _chart_card_close()
 
-        st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+        _divider()
         sm_cust_grp = (
             sa_df_model.assign(**{C_CUSTOMER: sa_df_model[C_CUSTOMER].replace("","(No Customer)").fillna("(No Customer)")})
             .groupby(C_CUSTOMER, as_index=False)[C_QTY]
@@ -2001,8 +2638,7 @@ def show_sales_analytics():
             with _d2:
                 _plotly_donut(p_labels, p_vals, title=t("Customer Share","حصة العملاء"), height=320)
 
-    # Full table + downloads
-    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    _divider()
     _section_header(t("Full Sales Detail","تفاصيل المبيعات الكاملة"), "📋")
     show_df = (sa_df_model if (sa_model_input and sa_df_model is not None and not sa_df_model.empty)
                else sa_df)
@@ -2023,10 +2659,11 @@ def show_sales_analytics():
                          use_container_width=True, key=f"sdl_xlsx{tag_s}")
 
 # ─────────────────────────────────────────────────────────────────────────────
-# PURCHASE ANALYTICS VIEW  ← all canonical columns, all 4 systems
+# PURCHASE ANALYTICS VIEW
 # ─────────────────────────────────────────────────────────────────────────────
 def show_purchase_analytics():
-    _section_header(t("Purchase Analytics — All Systems","تحليلات المشتريات — كل الأنظمة"), "🛒")
+    _section_header(t("Purchase Analytics — All Systems","تحليلات المشتريات — كل الأنظمة"), "🛒",
+                    t("Purchase orders from all configured Odoo systems","أوامر الشراء من جميع الأنظمة المُعدَّة"))
     st.markdown("<div class='info-banner'>📌 " +
                 t("Purchase orders from <b>all configured systems</b> (state: purchase / done). "
                   "Use the System filter to narrow down.",
@@ -2079,33 +2716,32 @@ def show_purchase_analytics():
 
     po_full = st.session_state.get("po_analytics_df")
     if po_full is None:
-        st.info(t("👆 Set your date range and click **Fetch Purchase Analytics** to load data.",
-                  "👆 حدد نطاق التاريخ واضغط **جلب تحليلات المشتريات** لتحميل البيانات.")); return
+        st.markdown(f"<div class='info-banner'>👆 {t('Set your date range and click Fetch Purchase Analytics to load data.','حدد نطاق التاريخ واضغط جلب تحليلات المشتريات لتحميل البيانات.')}</div>",
+                    unsafe_allow_html=True)
+        return
     if po_full.empty:
-        st.info(t("No purchases found for this period.","لا توجد مشتريات لهذه الفترة.")); return
+        st.markdown(f"<div class='info-banner'>ℹ️ {t('No purchases found for this period.','لا توجد مشتريات لهذه الفترة.')}</div>",
+                    unsafe_allow_html=True)
+        return
 
-    # Ensure numeric
     for nc in [C_QTY, C_UNIT_PRICE, C_SUBTOTAL]:
         if nc in po_full.columns:
             po_full[nc] = _to_num(po_full[nc])
 
-    # Apply system filter on canonical key
     if C_SYSTEM in po_full.columns:
         pdf_sys = po_full[po_full[C_SYSTEM].isin(selected_system_keys_p)].copy()
     else:
         pdf_sys = po_full.copy()
 
-    # Apply vendor filter
     pdf_vendor = (pdf_sys[pdf_sys[C_VENDOR].isin(po_vendor_sel)].copy()
                   if po_vendor_sel else pdf_sys.copy())
 
-    # ── Single model detail ──
-    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    _divider()
     _section_header(t("Single Model Purchase Detail","تفاصيل شراء موديل واحد"), "🔍")
 
     if not po_model_input:
-        st.info(t("💡 Enter a **Model Code** in the filter above to see single-model analytics.",
-                  "💡 أدخل **رمز الموديل** في الفلتر أعلاه لعرض تحليلات موديل واحد."))
+        st.markdown(f"<div class='info-banner'>💡 {t('Enter a Model Code in the filter above to see single-model analytics.','أدخل رمز الموديل في الفلتر أعلاه لعرض تحليلات موديل واحد.')}</div>",
+                    unsafe_allow_html=True)
     else:
         mc_norm  = po_model_input.upper()
         model_df = pdf_sys[pdf_sys[C_MODEL].str.upper() == mc_norm].copy() if C_MODEL in pdf_sys.columns else pd.DataFrame()
@@ -2113,8 +2749,8 @@ def show_purchase_analytics():
             model_df = model_df[model_df[C_VENDOR].isin(po_vendor_sel)]
 
         if model_df.empty:
-            st.info(t(f"No purchase records found for model **{po_model_input}**.",
-                      f"لا توجد سجلات شراء للموديل **{po_model_input}**."))
+            st.markdown(f"<div class='info-banner'>ℹ️ {t(f'No purchase records found for model {po_model_input}.', f'لا توجد سجلات شراء للموديل {po_model_input}.')}</div>",
+                        unsafe_allow_html=True)
         else:
             pb_qty  = float(_to_num(model_df[C_QTY]).sum())
             pb_amt  = float(_to_num(model_df[C_SUBTOTAL]).sum())
@@ -2138,9 +2774,10 @@ def show_purchase_analytics():
                                if pb_vendor_sel else model_df.copy())
 
             if model_vendor_df.empty:
-                st.warning(t("No data for selected vendor(s).","لا بيانات للموردين المحددين."))
+                st.markdown(f"<div class='warn-banner'>⚠️ {t('No data for selected vendor(s).','لا بيانات للموردين المحددين.')}</div>",
+                            unsafe_allow_html=True)
             else:
-                st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+                _divider()
                 _chart_card_open(t("Purchase Qty Over Time","كمية الشراء عبر الزمن"), "📈")
                 ts_df = (model_vendor_df.groupby(C_DATE, as_index=False)[C_QTY]
                          .sum().sort_values(C_DATE))
@@ -2154,7 +2791,7 @@ def show_purchase_analytics():
                                         use_container_width=True)
                 _chart_card_close()
 
-                st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+                _divider()
                 _chart_card_open(t("Vendor Share for this Model","حصة الموردين لهذا الموديل"), "🏭")
                 vshare = (model_vendor_df
                           .assign(**{C_VENDOR: model_vendor_df[C_VENDOR].replace("","(No Vendor)").fillna("(No Vendor)")})
@@ -2180,23 +2817,23 @@ def show_purchase_analytics():
                         _plotly_donut(vshare[C_VENDOR].tolist(), vshare[C_QTY].tolist(),
                                       title=t("Vendor Share","حصة الموردين"), height=300)
 
-                st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-                st.markdown(f"#### 📋 {t('Model Detail Table','جدول تفاصيل الموديل')} — {po_model_input}")
+                _divider()
+                st.markdown(f"<div class='section-header'><div class='section-header-bar'></div><div class='section-header-content'><div class='section-header-title'>📋 {t('Model Detail Table','جدول تفاصيل الموديل')} — {po_model_input}</div></div></div>", unsafe_allow_html=True)
                 _po_full_table(model_vendor_df, page_key="page_po_model")
                 st.markdown("<br>", unsafe_allow_html=True)
                 _po_download_row(model_vendor_df, tag_suffix=f"_{mc_norm}_v4")
 
-    # ── Overall purchase analytics ──
-    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    _divider()
     _section_header(t("Overall Purchase Analytics","تحليلات المشتريات الإجمالية"), "📊")
 
     if pdf_vendor.empty:
-        st.warning(t("No data for the selected filters.","لا توجد بيانات للفلاتر المحددة.")); return
+        st.markdown(f"<div class='warn-banner'>⚠️ {t('No data for the selected filters.','لا توجد بيانات للفلاتر المحددة.')}</div>",
+                    unsafe_allow_html=True)
+        return
 
     _po_kpi_row(pdf_vendor)
-    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    _divider()
 
-    # Sales by system
     sys_grp_p = (
         pdf_vendor.assign(**{C_SYSTEM: pdf_vendor[C_SYSTEM].map(lambda k: get_system_name(k) if k in SYSTEM_KEYS else k)})
         .groupby(C_SYSTEM, as_index=False)[C_SUBTOTAL].sum()
@@ -2216,9 +2853,8 @@ def show_purchase_analytics():
         render_premium_table(disp_spg)
     _chart_card_close()
 
-    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    _divider()
 
-    # Top 10 vendors by amount
     _chart_card_open(t("Top 10 Vendors by Purchase Amount","أعلى 10 موردين حسب مبلغ الشراء"), "🏭")
     vendor_grp = (
         pdf_vendor.assign(**{C_VENDOR: pdf_vendor[C_VENDOR].replace("","(No Vendor)").fillna("(No Vendor)")})
@@ -2242,9 +2878,8 @@ def show_purchase_analytics():
         _plotly_donut(vendor_grp[C_VENDOR].tolist(), vendor_grp[C_SUBTOTAL].tolist(),
                       title=t("Vendor Share (Top 10)","حصة الموردين (أعلى 10)"))
 
-    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    _divider()
 
-    # Top 10 products by qty
     _chart_card_open(t("Top 10 Products by Qty","أعلى 10 منتجات حسب الكمية"), "🏆")
     prod_grp_a = (
         pdf_vendor.assign(**{
@@ -2267,15 +2902,14 @@ def show_purchase_analytics():
         render_premium_table(disp_pg)
     _chart_card_close()
 
-    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    _divider()
     _top10_altair(t("Top 10 Categories by Qty","أعلى 10 فئات حسب الكمية"),
                   C_CATEGORY, C_QTY, pdf_vendor, color="#e74c3c")
-    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    _divider()
     _top10_altair(t("Top 10 Brand Categories by Qty","أعلى 10 فئات علامة تجارية حسب الكمية"),
                   C_BRAND_CAT, C_QTY, pdf_vendor, color="#9b59b6")
 
-    # Share donuts
-    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    _divider()
     _section_header(t("Purchase Share Analysis","تحليل حصص المشتريات"), "🥧")
     d1,d2,d3 = st.columns(3)
     with d1:
@@ -2301,25 +2935,56 @@ def show_purchase_analytics():
         _plotly_donut(sys_share_p[C_SYSTEM].tolist(), sys_share_p[C_SUBTOTAL].tolist(),
                       title=t("System Share","حصة النظام"))
 
-    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-    st.markdown(f"#### 📋 {t('Full Purchase Detail','تفاصيل المشتريات الكاملة')}")
+    _divider()
+    _section_header(t("Full Purchase Detail","تفاصيل المشتريات الكاملة"), "📋")
     _po_full_table(pdf_vendor, page_key="page_po_full")
     st.markdown("<br>", unsafe_allow_html=True)
     _po_download_row(pdf_vendor, tag_suffix="_overall_v4")
 
 # ─────────────────────────────────────────────────────────────────────────────
-# MAIN DASHBOARD
+# SIDEBAR
 # ─────────────────────────────────────────────────────────────────────────────
-def show_dashboard():
+def _render_sidebar():
     with st.sidebar:
-        st.markdown(f"### ⚙️ {t('Settings','الإعدادات')}")
-        lc2 = st.radio(t("🌐 Language","🌐 اللغة"),["EN","AR"],
-                       index=0 if get_lang()=="EN" else 1, horizontal=True)
-        if lc2!=get_lang(): st.session_state.lang=lc2; st.rerun()
-        st.divider()
-        st.markdown(f"##### 📊 {t('Analytics','التحليلات')}")
+        # Logo
+        st.markdown(f"""
+        <div class="sidebar-logo">
+            <div class="sidebar-logo-text">📊 SWAG</div>
+            <div class="sidebar-logo-sub">{t('Intelligence Platform', 'منصة التحليلات')}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # User card
+        email_short = st.session_state.user_email
+        st.markdown(f"""
+        <div class="sidebar-user-card">
+            <div class="sidebar-avatar">👤</div>
+            <div>
+                <div class="sidebar-user-name">{email_short}</div>
+                <div class="sidebar-user-role">{t('Administrator', 'مدير النظام')}</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Language
+        st.markdown(f"""<div class="sidebar-section">
+            <div class="sidebar-section-title">🌐 {t('Language', 'اللغة')}</div>
+        </div>""", unsafe_allow_html=True)
+        lc2 = st.radio("", ["EN","AR"], index=0 if get_lang()=="EN" else 1,
+                       horizontal=True, label_visibility="collapsed")
+        if lc2 != get_lang():
+            st.session_state.lang = lc2
+            st.rerun()
+
+        st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
+
+        # Navigation
+        st.markdown(f"""<div class="sidebar-section-title" style="padding:8px 0 6px; color:#3498db; font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:1.2px;">
+            📊 {t('Analytics Views', 'طرق العرض')}
+        </div>""", unsafe_allow_html=True)
+
         current_view = st.session_state.get("analytics_view","purchase")
-        col_s,col_p = st.columns(2)
+        col_s, col_p = st.columns(2)
         with col_s:
             if st.button(f"💰 {t('Sales','المبيعات')}",
                          type="primary" if current_view=="sales" else "secondary",
@@ -2330,66 +2995,261 @@ def show_dashboard():
                          type="primary" if current_view=="purchase" else "secondary",
                          use_container_width=True, key="nav_purchase_btn"):
                 st.session_state.analytics_view = "purchase"; st.rerun()
-        if current_view=="sales":
-            st.markdown("<div style='background:rgba(46,204,113,0.1);border-left:3px solid #2ecc71;"
-                        "border-radius:8px;padding:8px 12px;font-size:0.75rem;color:#2ecc71;margin-top:8px;'>"
-                        f"✅ {t('Viewing: All Systems Sales','عرض: مبيعات كل الأنظمة')}</div>",
-                        unsafe_allow_html=True)
-        else:
-            st.markdown("<div style='background:rgba(52,152,219,0.1);border-left:3px solid #3498db;"
-                        "border-radius:8px;padding:8px 12px;font-size:0.75rem;color:#3498db;margin-top:8px;'>"
-                        f"✅ {t('Viewing: All Systems Purchase','عرض: مشتريات كل الأنظمة')}</div>",
-                        unsafe_allow_html=True)
+
+        view_color = "#2ecc71" if current_view == "sales" else "#3498db"
+        view_label = t('Sales Active', 'المبيعات نشط') if current_view=="sales" else t('Purchase Active','المشتريات نشط')
+        st.markdown(f"""
+        <div style='background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);
+                    border-radius:10px;padding:8px 12px;margin:8px 0;display:flex;align-items:center;gap:8px;'>
+            <div style='width:6px;height:6px;border-radius:50%;background:{view_color};'></div>
+            <span style='font-size:0.7rem;color:#6b8ab0;'>{view_label}</span>
+        </div>
+        """, unsafe_allow_html=True)
+
         st.divider()
-        st.markdown(f"👤 **{st.session_state.user_email}**")
-        if st.button(f"🚪 {t('Logout','تسجيل الخروج')}", use_container_width=True):
-            do_logout()
+
+        # System status
+        stats = st.session_state.sys_stats
+        if stats:
+            st.markdown(f"""<div class="sidebar-section-title" style="padding:4px 0 8px; color:#3498db; font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:1.2px;">
+                🌐 {t('System Status', 'حالة الأنظمة')}
+            </div>""", unsafe_allow_html=True)
+            for key in SYSTEM_KEYS:
+                s  = stats.get(key, "—")
+                if s == "OK":
+                    badge_class = "sys-badge-ok"; badge_text = "✓ LIVE"
+                elif s == "NOT_FOUND":
+                    badge_class = "sys-badge-off"; badge_text = "○ EMPTY"
+                else:
+                    badge_class = "sys-badge-err"; badge_text = "✕ ERR"
+                st.markdown(f"""
+                <div style='display:flex;justify-content:space-between;align-items:center;
+                            padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.03);'>
+                    <span style='font-size:0.75rem;color:#c8d6e8;font-weight:600;'>{get_system_name(key)}</span>
+                    <span class='sys-badge {badge_class}'>{badge_text}</span>
+                </div>
+                """, unsafe_allow_html=True)
+            st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+
         st.divider()
-        st.markdown(f"##### 🔬 {t('Search Mode','وضع البحث')}")
+
+        # Search mode
+        st.markdown(f"<div class='sidebar-section-title' style='padding:4px 0 8px;color:#3498db;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;'>🔬 {t('Search Mode','وضع البحث')}</div>",
+                    unsafe_allow_html=True)
         et = st.toggle(t("Exact match only","تطابق تام فقط"), value=st.session_state.search_exact)
-        if et!=st.session_state.search_exact:
+        if et != st.session_state.search_exact:
             st.session_state.search_exact = et
             st.session_state.total_df = st.session_state.branch_df = st.session_state.transfers_df = None
             st.rerun()
-        st.caption(t("🎯 Exact","🎯 تطابق تام") if st.session_state.search_exact
-                   else t("🔍 Variant wildcard","🔍 كل المتغيرات"))
+        mode_text = t("🎯 Exact codes only","🎯 رموز تطابق تام") if st.session_state.search_exact else t("🔍 Variant wildcard","🔍 كل المتغيرات")
+        st.markdown(f"<div style='font-size:0.68rem;color:#4a6880;margin-top:4px;'>{mode_text}</div>", unsafe_allow_html=True)
+
         st.divider()
-        st.markdown(f"##### 🔴 {t('Low Stock Alert','تنبيه المخزون')}")
+
+        # Low stock
+        st.markdown(f"<div class='sidebar-section-title' style='padding:4px 0 8px;color:#e74c3c;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;'>🔴 {t('Low Stock Alert','تنبيه المخزون')}</div>",
+                    unsafe_allow_html=True)
         thr = st.number_input(t("Threshold (qty ≤)","الحد (كمية ≤)"),
                               min_value=0, max_value=1000,
                               value=st.session_state.low_stock_thresh, step=1)
-        if thr!=st.session_state.low_stock_thresh:
+        if thr != st.session_state.low_stock_thresh:
             st.session_state.low_stock_thresh = int(thr)
+
         st.divider()
+
+        # Last run
         if st.session_state.last_run:
-            st.markdown(f"🕒 **{t('Last Run','آخر تشغيل')}**")
-            st.caption(st.session_state.last_run.get("time",""))
+            snap = st.session_state.last_run
+            st.markdown(f"""
+            <div class='stats-card'>
+                <div style='font-size:0.65rem;color:#3498db;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;'>
+                    🕒 {t('Last Run','آخر تشغيل')}
+                </div>
+                <b>{t('Time','الوقت')}:</b> {snap.get('time','—')}<br>
+                <b>{t('Models','الموديلات')}:</b> {snap.get('models','—')}<br>
+                <b>{t('Rows','الصفوف')}:</b> {snap.get('rows','—')}
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.divider()
+
+        if st.button(f"🚪 {t('Sign Out','تسجيل الخروج')}", use_container_width=True):
+            do_logout()
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MAIN DASHBOARD
+# ─────────────────────────────────────────────────────────────────────────────
+def show_dashboard():
+    _render_sidebar()
 
     current_view = st.session_state.get("analytics_view","purchase")
 
+    # ── SALES VIEW ──────────────────────────────────────────────────────────
     if current_view == "sales":
-        st.markdown(f"""<div class='dash-header'>
-            <div class='dash-title'>💰 {t('Sales Dashboard — All Systems','لوحة المبيعات — كل الأنظمة')}</div>
-            <div class='dash-subtitle'>{t('Sales analytics from all configured Odoo systems','تحليلات المبيعات من كل أنظمة أودو المُعدَّة')}</div>
-        </div>""", unsafe_allow_html=True)
-        st.divider(); show_sales_analytics(); return
+        st.markdown(f"""
+        <div class='dashboard-hero'>
+            <div style='display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:24px;'>
+                <div style='flex:1;min-width:280px;'>
+                    <div class='hero-eyebrow'>
+                        <span class='hero-eyebrow-dot'></span>
+                        {t('SALES INTELLIGENCE', 'تحليلات المبيعات')}
+                    </div>
+                    <div class='hero-title'>
+                        {t('Sales', 'مبيعات')} <span class='hero-title-accent'>{t('Analytics', 'تحليلية')}</span><br>
+                        <span style='font-size:1.4rem;color:#6b8ab0;font-weight:500;'>
+                            {t('All Systems · Real-Time', 'كل الأنظمة · مباشر')}
+                        </span>
+                    </div>
+                    <div class='hero-subtitle'>
+                        {t('Unified sales data from all configured Odoo systems. Track top products, customers, and revenue trends.',
+                           'بيانات مبيعات موحدة من جميع أنظمة أودو. تتبع أفضل المنتجات والعملاء واتجاهات الإيرادات.')}
+                    </div>
+                </div>
+                <div class='hero-badges'>
+        """, unsafe_allow_html=True)
 
+        for key in SYSTEM_KEYS:
+            st.markdown(f"""
+            <div class='hero-sys-badge'>
+                <div class='hero-sys-indicator indicator-ok'></div>
+                <div>
+                    <div class='hero-sys-name'>{get_system_name(key)}</div>
+                    <div class='hero-sys-sub'>Odoo Sales</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown("</div></div></div>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
+        show_sales_analytics()
+        st.markdown("""<div class='footer'>© 2025 <span>SWAG Fashion</span> · Powered by <span>Odoo ERP</span> · Built with ❤️</div>""",
+                    unsafe_allow_html=True)
+        return
+
+    # ── PURCHASE VIEW ────────────────────────────────────────────────────────
     if current_view == "purchase":
-        st.markdown(f"""<div class='dash-header'>
-            <div class='dash-title'>🛒 {t('Purchase Dashboard — All Systems','لوحة المشتريات — كل الأنظمة')}</div>
-            <div class='dash-subtitle'>{t('Purchase analytics from all configured Odoo systems','تحليلات المشتريات من كل أنظمة أودو المُعدَّة')}</div>
-        </div>""", unsafe_allow_html=True)
-        st.divider(); show_purchase_analytics(); return
+        st.markdown(f"""
+        <div class='dashboard-hero'>
+            <div style='display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:24px;'>
+                <div style='flex:1;min-width:280px;'>
+                    <div class='hero-eyebrow'>
+                        <span class='hero-eyebrow-dot'></span>
+                        {t('PURCHASE INTELLIGENCE', 'تحليلات المشتريات')}
+                    </div>
+                    <div class='hero-title'>
+                        {t('Purchase', 'مشتريات')} <span class='hero-title-accent'>{t('Analytics', 'تحليلية')}</span><br>
+                        <span style='font-size:1.4rem;color:#6b8ab0;font-weight:500;'>
+                            {t('All Systems · Real-Time', 'كل الأنظمة · مباشر')}
+                        </span>
+                    </div>
+                    <div class='hero-subtitle'>
+                        {t('Comprehensive procurement data from all configured Odoo systems. Analyze vendors, categories, and purchase trends.',
+                           'بيانات شراء شاملة من جميع أنظمة أودو. حلل الموردين والفئات واتجاهات الشراء.')}
+                    </div>
+                </div>
+                <div class='hero-badges'>
+        """, unsafe_allow_html=True)
 
-    # ── Stock comparison view ────────────────────────────────────────────────
-    st.markdown(f"""<div class='dash-header'>
-        <div class='dash-title'>📊 {t('SWAG Product Comparison','مقارنة منتجات سواغ')}</div>
-        <div class='dash-subtitle'>{t('Real-time stock & price across 4 Odoo systems','المخزون والسعر الآني عبر 4 أنظمة أودو')}</div>
-    </div>""", unsafe_allow_html=True)
-    st.divider()
+        for key in SYSTEM_KEYS:
+            st.markdown(f"""
+            <div class='hero-sys-badge'>
+                <div class='hero-sys-indicator indicator-ok'></div>
+                <div>
+                    <div class='hero-sys-name'>{get_system_name(key)}</div>
+                    <div class='hero-sys-sub'>Odoo Purchase</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
-    # PDF Upload
-    _section_header(t("Upload Invoice PDF","رفع فاتورة PDF"), "📄")
+        st.markdown("</div></div></div>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
+        show_purchase_analytics()
+        st.markdown("""<div class='footer'>© 2025 <span>SWAG Fashion</span> · Powered by <span>Odoo ERP</span> · Built with ❤️</div>""",
+                    unsafe_allow_html=True)
+        return
+
+    # ── STOCK COMPARISON VIEW ────────────────────────────────────────────────
+    st.markdown(f"""
+    <div class='dashboard-hero'>
+        <div style='display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:24px;'>
+            <div style='flex:1;min-width:280px;'>
+                <div class='hero-eyebrow'>
+                    <span class='hero-eyebrow-dot'></span>
+                    {t('STOCK INTELLIGENCE', 'ذكاء المخزون')}
+                </div>
+                <div class='hero-title'>
+                    {t('Product', 'منتج')} <span class='hero-title-accent'>{t('Comparison', 'مقارنة')}</span><br>
+                    <span style='font-size:1.4rem;color:#6b8ab0;font-weight:500;'>
+                        {t('4 Systems · Live Stock', '4 أنظمة · مخزون مباشر')}
+                    </span>
+                </div>
+                <div class='hero-subtitle'>
+                    {t('Real-time stock levels and pricing across all connected Odoo systems. Search by model code, upload invoices, track transfers.',
+                       'مستويات المخزون الآنية والأسعار عبر جميع أنظمة أودو المتصلة. ابحث برمز الموديل أو ارفع الفواتير أو تتبع النقليات.')}
+                </div>
+                <div class='hero-stats-row'>
+    """, unsafe_allow_html=True)
+
+    tdf_check = st.session_state.total_df
+    if tdf_check is not None and not tdf_check.empty:
+        ok_rows = tdf_check[tdf_check.get("_status","") == "OK"] if "_status" in tdf_check.columns else tdf_check
+        total_qty_h = int(_to_num(ok_rows[C_ON_HAND]).sum()) if C_ON_HAND in ok_rows.columns else 0
+        n_models_h  = ok_rows[C_MODEL].nunique() if C_MODEL in ok_rows.columns else 0
+        stats_h = st.session_state.sys_stats
+        on_h = sum(1 for v in stats_h.values() if v=="OK")
+        st.markdown(f"""
+                    <div class='hero-stat'>
+                        <div class='hero-stat-value'>{total_qty_h:,}</div>
+                        <div class='hero-stat-label'>{t('Total Units', 'إجمالي الوحدات')}</div>
+                    </div>
+                    <div class='hero-stat-divider'></div>
+                    <div class='hero-stat'>
+                        <div class='hero-stat-value'>{n_models_h}</div>
+                        <div class='hero-stat-label'>{t('Models Found', 'موديلات')}</div>
+                    </div>
+                    <div class='hero-stat-divider'></div>
+                    <div class='hero-stat'>
+                        <div class='hero-stat-value'>{on_h}/4</div>
+                        <div class='hero-stat-label'>{t('Systems Online', 'أنظمة متصلة')}</div>
+                    </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown(f"""
+                    <div class='hero-stat'>
+                        <div class='hero-stat-value'>4</div>
+                        <div class='hero-stat-label'>{t('Odoo Systems', 'أنظمة أودو')}</div>
+                    </div>
+                    <div class='hero-stat-divider'></div>
+                    <div class='hero-stat'>
+                        <div class='hero-stat-value'>Live</div>
+                        <div class='hero-stat-label'>{t('Data Sync', 'مزامنة البيانات')}</div>
+                    </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("</div></div>", unsafe_allow_html=True)
+
+    # System badges in hero
+    st.markdown("<div class='hero-badges'>", unsafe_allow_html=True)
+    for key in SYSTEM_KEYS:
+        stats = st.session_state.sys_stats
+        s = stats.get(key, "—")
+        ind_class = "indicator-ok" if s=="OK" else "indicator-off" if s in ["ERROR","NOT_FOUND"] else "indicator-unk"
+        st.markdown(f"""
+        <div class='hero-sys-badge'>
+            <div class='hero-sys-indicator {ind_class}'></div>
+            <div>
+                <div class='hero-sys-name'>{get_system_name(key)}</div>
+                <div class='hero-sys-sub'>Odoo ERP</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    st.markdown("</div></div></div>", unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # ── PDF Upload ──────────────────────────────────────────────────────────
+    _section_header(t("Upload Invoice PDF","رفع فاتورة PDF"), "📄",
+                    t("Extract product codes automatically from supplier invoices","استخراج رموز المنتجات تلقائياً من فواتير الموردين"))
     p1,p2 = st.columns([2.5,1.5])
     with p1:
         updf = st.file_uploader(t("Upload PDF","رفع PDF"), type=["pdf"], label_visibility="collapsed")
@@ -2420,7 +3280,7 @@ def show_dashboard():
             c1.metric(t("Raw codes","رموز مستخرجة"), len(raw))
             c2.metric(t("Unique models","موديلات فريدة"), len(unique_codes))
             c3.info(f"📌 {t('Main','رئيسية') if is_main else t('With sizes','مع المقاسات')}")
-            with st.expander(t(f"📋 {len(unique_codes)} codes","📋 الرموز"), expanded=False):
+            with st.expander(t(f"📋 {len(unique_codes)} codes extracted","📋 الرموز المستخرجة"), expanded=False):
                 st.code("\n".join(f"{item['sequence']:>3}. {item['code']}" for item in unique_sorted))
             ca,cb = st.columns(2)
             with ca:
@@ -2432,25 +3292,30 @@ def show_dashboard():
                              use_container_width=True, key="pb"):
                     st.session_state.pdf_codes = unique_codes; st.session_state.pdf_mode = "branch"; st.rerun()
         else:
-            st.warning(t("No codes found in PDF.","لم يتم العثور على رموز."))
+            st.markdown(f"<div class='warn-banner'>⚠️ {t('No codes found in PDF.','لم يتم العثور على رموز.')}</div>",
+                        unsafe_allow_html=True)
 
-    st.divider()
+    _divider()
 
-    # Manual Search
-    _section_header(t("Manual Search","بحث يدوي"), "✍️")
-    L,R = st.columns([1.5,1])
+    # ── Manual Search ────────────────────────────────────────────────────────
+    _section_header(t("Product Search","البحث عن المنتجات"), "🔍",
+                    t("Search stock across all 4 Odoo systems simultaneously","ابحث في المخزون عبر 4 أنظمة أودو في آن واحد"))
+
+    L,R = st.columns([1.6,1])
     with L:
         if not st.session_state.search_exact:
-            st.markdown("<div class='info-banner'>🔍 <b>Variant mode</b> — XP6013 → XP6013-S/M/L</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='info-banner'>🔍 <b>{t('Variant mode','الوضع المتغير')}</b> — XP6013 → XP6013-S/M/L/XL …</div>",
+                        unsafe_allow_html=True)
         else:
-            st.markdown("<div class='warn-banner'>🎯 <b>Exact match mode</b> — identical codes only.</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='warn-banner'>🎯 <b>{t('Exact match mode','وضع التطابق التام')}</b> — {t('Identical codes only','الرموز المطابقة فقط')}</div>",
+                        unsafe_allow_html=True)
         ms   = t("Single Model","موديل واحد"); mm = t("Multiple Models","موديلات متعددة")
         mode = st.radio(t("Mode","الوضع"),[ms,mm], horizontal=True, label_visibility="collapsed")
         if mode==mm:
             rt    = st.text_area(t("Codes","الرموز"), height=130, placeholder="ABC123\nDEF456")
             codes = [c.strip() for c in rt.replace(",","\n").splitlines() if c.strip()]
         else:
-            sg    = st.text_input(t("Model Code","رمز الموديل"), placeholder="e.g. XP6013")
+            sg    = st.text_input(t("Model Code","رمز الموديل"), placeholder=t("e.g. XP6013","مثال: XP6013"))
             codes = [sg.strip()] if sg.strip() else []
         t1,t2,t3,t4,t5 = st.columns(5)
         sz  = t1.toggle(t("Zero","الصفري"),     value=False)
@@ -2459,7 +3324,7 @@ def show_dashboard():
         st_ = t4.toggle(t("Transfers","نقليات"), value=False)
         sr  = t5.toggle(t("Reorder","طلب"),      value=False)
         if sr:
-            with st.expander(f"⚙️ {t('Reorder Settings','إعدادات')}", expanded=True):
+            with st.expander(f"⚙️ {t('Reorder Settings','إعدادات إعادة الطلب')}", expanded=True):
                 rx,ry = st.columns(2)
                 with rx:
                     rm = st.radio(t("Mode","الوضع"),
@@ -2478,31 +3343,36 @@ def show_dashboard():
                     st.session_state.reorder_max_level = st.number_input(
                         t("Max level","الحد"), min_value=1, max_value=99999,
                         value=st.session_state.reorder_max_level, step=1)
-        cbtn = st.button(f"🔍 {t('Compare','مقارنة')}", use_container_width=True, type="primary")
+        cbtn = st.button(f"🔍 {t('Search All Systems','البحث في كل الأنظمة')}",
+                         use_container_width=True, type="primary")
 
     with R:
-        st.markdown(f"#### 📋 {t('Last Run','آخر تشغيل')}")
         snap  = st.session_state.last_run; stats = st.session_state.sys_stats
         if not snap:
-            st.info(t("Run a comparison first.","قم بتشغيل مقارنة أولاً."))
+            st.markdown(f"""
+            <div class='stats-card' style='text-align:center;padding:28px 16px;'>
+                <div style='font-size:2rem;margin-bottom:12px;opacity:0.4;'>🔍</div>
+                <div style='font-size:0.8rem;color:#3a5a7a;'>
+                    {t('Run a search to see results', 'ابحث لرؤية النتائج')}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
         else:
             on = sum(1 for v in stats.values() if v=="OK")
-            st.markdown(f"<div class='stats-card'>"
-                        f"🕒 <b>{t('Time','الوقت')}:</b> {snap.get('time','—')}<br>"
-                        f"📦 <b>{t('Models','الموديلات')}:</b> {snap.get('models','—')}<br>"
-                        f"🌐 <b>{t('Online','متصل')}:</b> {on}/4<br>"
-                        f"📊 <b>{t('Rows','الصفوف')}:</b> {snap.get('rows','—')}"
-                        f"</div>", unsafe_allow_html=True)
-            st.markdown("")
-            for key in SYSTEM_KEYS:
-                s  = stats.get(key,"—")
-                bc = "badge-ok" if s=="OK" else "badge-off" if s=="NOT_FOUND" else "badge-err"
-                bt = "✅ OK" if s=="OK" else "🔴 OFF" if s=="NOT_FOUND" else "⚠️ ERR"
-                st.markdown(f"<div class='sys-row'>"
-                            f"<span style='font-size:.85rem;color:#e8edf2'><b>{get_system_name(key)}</b></span>"
-                            f"<span class='{bc}'>{bt}</span></div>", unsafe_allow_html=True)
+            st.markdown(f"""
+            <div class='stats-card'>
+                <div style='font-size:0.65rem;color:#3498db;font-weight:700;text-transform:uppercase;
+                            letter-spacing:1px;margin-bottom:10px;'>
+                    📊 {t('Last Search', 'آخر بحث')}
+                </div>
+                <b>{t('Time','الوقت')}:</b> {snap.get('time','—')}<br>
+                <b>{t('Models','الموديلات')}:</b> {snap.get('models','—')}<br>
+                <b>{t('Online','متصل')}:</b> {on}/4<br>
+                <b>{t('Rows','الصفوف')}:</b> {snap.get('rows','—')}
+            </div>
+            """, unsafe_allow_html=True)
 
-    # Run comparison
+    # Run comparison logic
     run_codes = None; force_branch = False
     if st.session_state.get("pdf_codes"):
         run_codes = st.session_state.pdf_codes
@@ -2513,7 +3383,9 @@ def show_dashboard():
 
     if run_codes is not None:
         if not run_codes:
-            st.warning(t("Enter at least one model code.","أدخل رمزاً واحداً.")); st.stop()
+            st.markdown(f"<div class='warn-banner'>⚠️ {t('Enter at least one model code.','أدخل رمزاً واحداً.')}</div>",
+                        unsafe_allow_html=True)
+            st.stop()
         run_codes = list(dict.fromkeys([c.strip() for c in run_codes if c.strip()]))
         ct = tuple(run_codes)
         with st.spinner(t("⚡ Fetching from 4 systems…","⚡ جلب البيانات من 4 أنظمة…")):
@@ -2554,9 +3426,12 @@ def show_dashboard():
     # Results
     tdf  = st.session_state.total_df;   bdf  = st.session_state.branch_df
     trdf = st.session_state.transfers_df; rdf = st.session_state.reorder_df
-    if tdf is None or tdf.empty: return
+    if tdf is None or tdf.empty:
+        st.markdown("""<div class='footer'>© 2025 <span>SWAG Fashion</span> · Powered by <span>Odoo ERP</span> · Built with ❤️</div>""",
+                    unsafe_allow_html=True)
+        return
 
-    st.divider()
+    _divider()
     thr   = st.session_state.low_stock_thresh
     stats = st.session_state.sys_stats
     ok    = tdf[tdf["_status"]=="OK"] if "_status" in tdf.columns else tdf
@@ -2569,12 +3444,12 @@ def show_dashboard():
             det = ", ".join(f"{r.get(C_MODEL,'?')}@{get_system_name(r.get(C_SYSTEM,'?'))}({r.get(C_ON_HAND,0)})"
                             for _,r in low.head(8).iterrows())
             if len(low)>8: det+=f" +{len(low)-8}"
-            st.markdown(f"<div class='alert-banner'>🔴 <b>{t('Low Stock','مخزون منخفض')}:</b> "
-                        f"{len(low)} ≤{thr} — {det}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='alert-banner'>🔴 <b>{t('Low Stock Alert','تنبيه المخزون المنخفض')}:</b> "
+                        f"{len(low)} {t('products','منتجات')} ≤{thr} — {det}</div>", unsafe_allow_html=True)
 
     m1,m2,m3,m4 = st.columns(4)
     m1.metric(t("Total Rows","إجمالي الصفوف"), len(tdf))
-    m2.metric(t("Systems Online","الأنظمة"), f"{on}/4")
+    m2.metric(t("Systems Online","الأنظمة متصلة"), f"{on}/4")
     if C_ON_HAND in ok.columns:
         m3.metric(t("Total Qty","إجمالي الكمية"), int(_to_num(ok[C_ON_HAND]).sum()))
     if C_SALE_PRICE in ok.columns:
@@ -2585,7 +3460,7 @@ def show_dashboard():
     ht = st.session_state.show_transfers and trdf is not None and not trdf.empty
     hr = st.session_state.show_reorder   and rdf  is not None and not rdf.empty
 
-    tlabels = [f"📦 {t('Total Stock','المخزون الإجمالي')}", f"📊 {t('Price History','تاريخ الأسعار')}"]
+    tlabels = [f"📦 {t('Total Stock','المخزون الإجمالي')}", f"📈 {t('Price History','تاريخ الأسعار')}"]
     if hb: tlabels.append(f"🗺️ {t('Branch Stock','مخزون الفروع')}")
     if ht: tlabels.append(f"🚚 {t('Transfers','النقليات')}")
     if hr: tlabels.append(f"📦 {t('Reorder','إعادة الطلب')}")
@@ -2594,7 +3469,8 @@ def show_dashboard():
 
     with tabs[ti]:
         ti+=1
-        _section_header(t("Total Stock","المخزون الإجمالي"), "📦")
+        _section_header(t("Total Stock","المخزون الإجمالي"), "📦",
+                        t("Combined stock from all connected systems","المخزون الموحد من كل الأنظمة المتصلة"))
         display_df(tdf, thr, table_key="total")
         st.markdown("<br>", unsafe_allow_html=True)
         d1,d2,d3,_ = st.columns([1,1,1,1])
@@ -2610,10 +3486,12 @@ def show_dashboard():
 
     with tabs[ti]:
         ti+=1
-        _section_header(t("Price History","تاريخ الأسعار"), "📈")
+        _section_header(t("Price History","تاريخ الأسعار"), "📈",
+                        t("Track price changes across multiple searches","تتبع تغيرات الأسعار عبر عمليات البحث"))
         hdf = build_price_history_df()
         if hdf.empty:
-            st.info(t("Run multiple comparisons to track prices.","قم بتشغيل مقارنات متعددة لتتبع الأسعار."))
+            st.markdown(f"<div class='info-banner'>💡 {t('Run multiple comparisons to track price changes over time.','قم بتشغيل مقارنات متعددة لتتبع تغيرات الأسعار.')}</div>",
+                        unsafe_allow_html=True)
         else:
             st.line_chart(hdf, use_container_width=True)
             if st.button(t("🗑️ Clear History","🗑️ مسح السجل")):
@@ -2622,13 +3500,14 @@ def show_dashboard():
     if hb:
         with tabs[ti]:
             ti+=1
-            _section_header(t("Branch-wise Stock","مخزون حسب الفرع"), "🗺️")
+            _section_header(t("Branch-wise Stock","مخزون حسب الفرع"), "🗺️",
+                            t("Stock levels per branch and location","مستويات المخزون لكل فرع وموقع"))
             display_df(bdf, thr, table_key="branch")
             okb = bdf[bdf["_status"]=="OK"] if "_status" in bdf.columns else bdf
             if not okb.empty and C_BRANCH in okb.columns and C_ON_HAND in okb.columns:
                 chart = okb.groupby([C_SYSTEM, C_BRANCH])[C_ON_HAND].apply(lambda s: _to_num(s).sum()).reset_index()
                 if not chart.empty:
-                    st.markdown(f"#### 📊 {t('Qty by Branch','الكميات حسب الفرع')}")
+                    _section_header(t("Qty by Branch","الكميات حسب الفرع"), "📊")
                     st.bar_chart(chart.set_index(C_BRANCH)[C_ON_HAND], use_container_width=True)
             b1,b2,_ = st.columns([1,1,2])
             b1.download_button(t("⬇️ CSV","⬇️ CSV"), to_csv(bdf), dl_name("branch","csv"),
@@ -2640,7 +3519,8 @@ def show_dashboard():
     if ht:
         with tabs[ti]:
             ti+=1
-            _section_header(t("Pending Transfers","النقليات المعلقة"), "🚚")
+            _section_header(t("Pending Transfers","النقليات المعلقة"), "🚚",
+                            t("Transfers in draft, waiting, confirmed, or ready state","النقليات في حالة مسودة أو انتظار أو تأكيد"))
             okt = trdf[trdf["_status"]=="OK"] if "_status" in trdf.columns else trdf
             if not okt.empty:
                 k1,k2,k3 = st.columns(3)
@@ -2658,7 +3538,8 @@ def show_dashboard():
     if hr:
         with tabs[ti]:
             ti+=1
-            _section_header(t("Reorder Suggestions","اقتراحات إعادة الطلب"), "📦")
+            _section_header(t("Reorder Suggestions","اقتراحات إعادة الطلب"), "📦",
+                            t("Products that need replenishment based on sales velocity","المنتجات التي تحتاج تجديد بناءً على سرعة المبيعات"))
             okr = rdf[rdf["_status"]=="OK"] if "_status" in rdf.columns else rdf
             if not okr.empty:
                 crit = okr[okr[C_PRIORITY].str.startswith("🔴")].shape[0] if C_PRIORITY in okr.columns else 0
@@ -2679,7 +3560,8 @@ def show_dashboard():
                       okr[okr[C_PRIORITY].str.startswith(("🔴","🟡"))] if C_PRIORITY in okr.columns else okr)
                 display_df(dr.reset_index(drop=True), table_key="reorder")
             else:
-                st.info(t("No reorder data.","لا بيانات إعادة طلب."))
+                st.markdown(f"<div class='info-banner'>ℹ️ {t('No reorder data.','لا بيانات إعادة طلب.')}</div>",
+                            unsafe_allow_html=True)
             o1,o2,_ = st.columns([1,1,2])
             o1.download_button(t("⬇️ CSV","⬇️ CSV"), to_csv(rdf), dl_name("reorder","csv"),
                                "text/csv", use_container_width=True)
@@ -2687,7 +3569,7 @@ def show_dashboard():
                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                                use_container_width=True)
 
-    st.markdown("<div class='footer'>© 2025 SWAG Fashion · Powered by Odoo · Built with ❤️</div>",
+    st.markdown("""<div class='footer'>© 2025 <span>SWAG Fashion</span> · Powered by <span>Odoo ERP</span> · Built with ❤️</div>""",
                 unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────────────────────
